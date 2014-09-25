@@ -437,10 +437,6 @@
 	} 
 ##RMQ
 
-	mm[0] = -1;
-    for(int i = 1 ; i <= MAXN ; i++){
-        mm[i] = ((i & (i - 1)) == 0) ? mm[i - 1] + 1 : mm[i - 1];
-    }
 ###一维
 
 	int a[MAXN];
@@ -449,6 +445,10 @@
 	int n , k;
 	void initRMQ()
 	{
+		mm[0] = -1;
+	    for(int i = 1 ; i <= MAXN ; i++){
+	        mm[i] = ((i & (i - 1)) == 0) ? mm[i - 1] + 1 : mm[i - 1];
+	    }
 	    for(int i = 1 ; i <= n ; i++){
 	        dp[i][0] = a[i];
 	    }
@@ -471,6 +471,10 @@
 	int n , m , q;
 	void initRMQ()
 	{
+		mm[0] = -1;
+	    for(int i = 1 ; i <= MAXN ; i++){
+	        mm[i] = ((i & (i - 1)) == 0) ? mm[i - 1] + 1 : mm[i - 1];
+	    }
 	    for(int i = 1 ; i <= n ; i++){
 	        for(int j = 1 ; j <= m ; j++){
 	            dp[i][j][0][0] = a[i][j];
@@ -548,6 +552,8 @@
 	    }
 	    return dis[en];
 	}
+###最大环 —— 最小环
+
 ###最短路次短路计数
 	void dij()
 	{
@@ -712,87 +718,112 @@
 
 ##连通性
 ###SCC	
-	void tarjan(int u)
+	注释部分为判断仙人掌图
+	void tarjin(int u)
 	{
-	    dfn[u] = low[u] = dindex++;
-	    instack[u] = 1;
+	    low[u] = dfn[u] = ++dindex;
 	    st[++tail] = u;
-	    for(int j = head[u] ; ~j ; j = e[j].next){
+	    instack[u] = 1;
+	//  int cnt = 0;
+	    for(int j = head[u] ; ~j ; j = e[j].next) {
 	        int v = e[j].v;
-	        if (!dfn[v])
-	        {
-	            tarjan(v);
-	            if (low[u] > low[v])low[u] = low[v];
+	//        if(color[v])ok = 0;
+	        if(!dfn[v]) {
+	            tarjin(v);
+	//            if(low[v] > dfn[u])ok = 0;
+	//            if(low[v] < dfn[u])cnt++;
+	//            if(cnt == 2)ok = 0;
+	            low[u] = min(low[u] , low[v]);
 	        }
-	        else if (instack[v] && dfn[v] < low[u])
-	            low[u] = dfn[v];
+	        else if(instack[v]) {
+	            low[u] = min(low[u] , dfn[v]);
+	//            cnt++;
+	//            if(cnt == 2)ok = 0;
+	        }
 	    }
-	    if (dfn[u] == low[u]){
+	    if(dfn[u] == low[u]) {
 	        int i;
-	        do{
+	        bcnt++;
+	        do {
 	            i = st[tail--];
 	            instack[i] = 0;
 	            cmp[i] = bcnt;
-	        }
-	        while (i!=u);
-	        bcnt++;
+	        } while(i != u);
 	    }
+	//    color[u] = 1;
 	}
 	void scc()
 	{
-	    bcnt = dindex = 1;
-	    tail = 0;
 	    clr(dfn , 0);
 	    clr(low , 0);
 	    clr(instack , 0);
 	    clr(st , 0);
 	    clr(cmp , 0);
-	    for (int i = 1 ; i <= N ; i++)
-	        if (!dfn[i])tarjan(i);
+	    clr(color , 0);
+	    tail = bcnt = dindex = 0;
+	    for(int i = 1 ; i <= N ; i++) {
+	        if(!dfn[i])tarjin(i);
+	    }
 	}
+
+###点联通
+###边联通
 ##匹配
-###二分图匹配
-	int V;//顶点数
-	vector <int> G[MAXN];//图的邻接表表示
-	int match[MAXN];//所匹配的顶点
-	bool used[MAXN];//dfs用到的访问标记
-	//向图中增加一条连接u和v的边
-	void add_edge(int u , int v)
+###最大匹配 匈牙利
+	int V;
+	int match;
+	int matchx[MAXN], matchy[MAXN];
+	int vis[MAXN];
+	int preHungary()
 	{
-	    G[u].push_back(v);
-	    G[v].push_back(u);
+		int res = 0, u, v;
+		for(int i = 1; i <= V; i++)
+		{
+			u = i;
+			for(int j = head1[i]; ~j ; j = e1[j].next)
+			{
+				v = e1[j].v;
+				if(matchy[v] == -1)
+				{
+					matchx[u] = v;
+					matchy[v] = u;
+					res++;
+					break;
+				}
+			}
+		}
+		return res;
 	}
-	//使用DFS寻找增广路
-	bool dfs(int v)
+	bool dfs(int u)
 	{
-	    used[v] = true;
-	    for(int i = 0 ; i < G[v].size() ; i++)
-	    {
-	        int u = G[v][i] , w = match[u];
-	        if(w < 0 || !used[w] && dfs(w))
-	        {
-	            match[v] = u;
-	            match[u] = v;
-	            return true;
-	        }
-	    }
-	    return false;
+		int v;
+		for(int j = head1[u]; ~j ; j = e1[j].next)
+		{
+			v = e1[j].v;
+			if(vis[v]) continue;
+			vis[v] = 1;
+			if(matchy[v] == -1 || dfs(matchy[v]))
+			{
+				matchy[v] = u;
+				matchx[u] = v;
+				return 1;
+			}
+		}
+		return 0;
 	}
-	//求解二分图的最大匹配
-	int bipartite_matching()
+	void solve()
 	{
-	    int res = 0;
-	    memset(match , - 1  , sizeof(match));
-	    for(int v = 0 ; v < V ; v++)
-	    {
-	        if(match[v] < 0)
-	        {
-	            memset(used , 0 , sizeof(used));
-	            if(dfs(v))res++;
-	        }
-	    }
-	    return res;
+		match = 0;
+		clr(matchx, -1); clr(matchy, -1);
+		match += preHungary();
+		for(int i = 1; i <= V; i++)
+			if(matchx[i] == -1)
+			{
+				clr(vis, 0);
+				if(dfs(i)) match++;
+			}
 	}
+
 ##网络流
 ###最大流
 ####Dinic
