@@ -1,4 +1,4 @@
-#配置环境
+hu#配置环境
 
 - codeblocks    在codeblocks --> setting -->环境变量
 
@@ -73,6 +73,7 @@
 	const int inf = 0x3f3f3f3f;
 	const int INF = ~0U >> 1;
 	const long long LLinf = 0x3FFFFFFFFFFFFFFFLL;
+	const long long LLINF = 1 << 63 - 1;
 	const int IMIN = 0x80000000;
 	 
 	 
@@ -97,6 +98,30 @@
 	    
 	    return 0;
 	}
+##输入输出挂
+	int Scan()
+	{
+	    int flag = 1;
+	    char ch;
+	    int a = 0;
+	    while((ch = getchar()) == ' ' || ch == '\n');
+	    if(ch == '-') flag = -1;
+	    else
+	    a += ch - '0';
+	    while((ch = getchar()) != ' ' && ch != '\n')
+	    {
+	        a *= 10;
+	        a += ch - '0';
+	    }
+	    return flag * a;
+	}
+	void Out(int a)
+	{
+	    if(a < 0) {putchar('-'); a = -a;}
+	    if(a >= 10)Out(a / 10);
+	    putchar(a % 10 + '0');
+	}
+
 #杂项
 ##C++大整数类
 
@@ -502,10 +527,10 @@
 	    return max(max(dp[x1][y1][k1][k2] , dp[x1][y2][k1][k2]) , max(dp[x2][y1][k1][k2] , dp[x2][y2][k1][k2]));
 	}
 ##LCA
-###Tarjin——离线
+###Tarjan——离线
 	//flag初始化为0 ， 需要并查集的find ， g记录每个点的query对点 ， dis记录该点距根的距离
-	//初始tarjin根（1）
-	void tarjin(int u)
+	//初始tarjan根（1）
+	void tarjan(int u)
 	{
 	    flag[u] = 1;
 	    for(int i = 0 ; i < g[u].sz ; i++){
@@ -516,7 +541,7 @@
 	        int v = e[i].v , w = e[i].c;
 	        if(!flag[v]){
 	            dis[v] = dis[u] + w;
-	            tarjin(v);
+	            tarjan(v);
 	            fa[v] = u;
 	        }
 	    }
@@ -716,10 +741,12 @@
         printf("%.3f\n" , ans);
 	}
 
+###最小生成树计数
+###生成树计数
 ##连通性
 ###SCC	
 	注释部分为判断仙人掌图
-	void tarjin(int u)
+	void tarjan(int u)
 	{
 	    low[u] = dfn[u] = ++dindex;
 	    st[++tail] = u;
@@ -729,7 +756,7 @@
 	        int v = e[j].v;
 	//        if(color[v])ok = 0;
 	        if(!dfn[v]) {
-	            tarjin(v);
+	            tataarrjan(v);
 	//            if(low[v] > dfn[u])ok = 0;
 	//            if(low[v] < dfn[u])cnt++;
 	//            if(cnt == 2)ok = 0;
@@ -757,17 +784,58 @@
 	    clr(dfn , 0);
 	    clr(low , 0);
 	    clr(instack , 0);
-	    clr(st , 0);
 	    clr(cmp , 0);
-	    clr(color , 0);
+	//  clr(color , 0);
 	    tail = bcnt = dindex = 0;
 	    for(int i = 1 ; i <= N ; i++) {
-	        if(!dfn[i])tarjin(i);
+	        if(!dfn[i])tarjan(i);
 	    }
 	}
 
 ###点联通
-###边联通
+###边双联通分量
+	void Tarjan(int u, int fa)
+	{
+	    dfn[u] = low[u] = nindex++;
+	    instack[u] = 1;
+	    st[++top] = u;
+	    int v;
+	    for(int j = head[u]; ~j ; j = e[j].next) {
+	        if(j == fa)continue;
+	        v = e[j].v;
+	        if(!dfn[v]) {
+	            Tarjan(v, j ^ 1);
+	            if(low[u] > low[v])
+	                low[u] = low[v];
+	        }
+	        else if(instack[v]) {
+	            if(low[u] > dfn[v])
+	                low[u] = dfn[v];
+	        }
+	    }
+	    if(dfn[u] == low[u]) {
+	        ncnt++;
+	        do {
+	            v = st[top--];
+	            instack[v] = 0;
+	            cmp[v] = ncnt;
+	        } while(v != u);
+	    }
+	}
+	void solve()
+	{
+	    clr(dfn , 0);
+	    clr(low , 0);
+	    clr(instack , 0);
+	    clr(cmp , 0);
+	    ncnt = 0;
+	    nindex = 0;
+	    top = 0;
+	    for(int i = 1; i <= N; i++)
+	        if(!cmp[i]) {
+	            Tarjan(i, -1);
+	        }
+	}
 ##匹配
 ###最大匹配 匈牙利
 	int V;
