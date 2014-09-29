@@ -125,11 +125,9 @@ hu#配置环境
 #杂项
 ##C++大整数类
 
-
 	#define MAXN 9999
-	#define MAXSIZE 10
-	#define DLEN 4
-	 
+    #define MAXSIZE 10
+    #define DLEN 4 
 	class BigNum
 	{ 
 	private: 
@@ -527,7 +525,7 @@ hu#配置环境
 	    return max(max(dp[x1][y1][k1][k2] , dp[x1][y2][k1][k2]) , max(dp[x2][y1][k1][k2] , dp[x2][y2][k1][k2]));
 	}
 ##LCA
-###Tarjan——离线
+###离线——Tarjan
 	//flag初始化为0 ， 需要并查集的find ， g记录每个点的query对点 ， dis记录该点距根的距离
 	//初始tarjan根（1）
 	void tarjan(int u)
@@ -545,6 +543,68 @@ hu#配置环境
 	            fa[v] = u;
 	        }
 	    }
+	}
+
+###在线——基于RMQ
+	vector<pair<int,int> >e[MAXN];
+	int dist[MAXN];
+	int root;
+	int depth,b[MAXN*2],a[MAXN*2],tot;
+	int p[MAXN],f[MAXN];
+	int dp[MAXN*2][20];
+	int ori[MAXN];
+	void init()
+	{
+	    tot = 0;
+	    depth = 0;
+	    clr(ori , 0);
+	    for(int i = 0 ; i <= n ; i++)e[i].clear();
+	}
+	int find_root()
+	{
+	    for(int i = 1 ; i <= n; i++){
+	        if(!ori[i])return i;
+	    }
+	}
+	void dfs(){
+	    stack<pair<int,pair<int,int> > >s;
+	    s.push(mk(root,mk(0,0)));
+	    while(!s.empty()){
+	        pair<int,pair<int,int> >now=s.top();s.pop();
+	        int u=now.first,pre=now.second.first,i=now.second.second;
+	        if(i==0){
+	            int t=++depth;
+	            b[++tot]=t;
+	            f[t]=u;
+	            p[u]=tot;
+	        }
+	        if(i<e[u].size()){
+	            int v=e[u][i].first,w=e[u][i].second;
+	            s.push(mk(u,mk(pre,i+1)));
+	            if(v==pre) continue;
+	            dist[v]=dist[u]+w;
+	            s.push(mk(v,mk(u,0)));
+	        }
+	        else
+	            b[++tot]=b[p[pre]];
+	    }
+	}
+	
+	void Init_rmq(int n){
+	    for(int i=1;i<=n;i++)
+	        dp[i][0]=b[i];
+	    int m=floor(log(n*1.0)/log(2.0));
+	    for(int j=1;j<=m;j++)
+	        for(int i=1;i<=n-(1<<j)+1;i++)
+	            dp[i][j]=min(dp[i][j-1],dp[i+(1<<(j-1))][j-1]);
+	}
+	int rmq(int l,int r){
+	    int k=floor(log((r-l+1)*1.0)/log(2.0));
+	    return min(dp[l][k],dp[r-(1<<k)+1][k]);
+	}
+	int lca(int a,int b){
+	    if(p[a]>p[b]) swap(a,b);
+	    return f[rmq(p[a],p[b])];
 	}
 
 ##最小覆盖圆
@@ -577,7 +637,47 @@ hu#配置环境
 	    }
 	    return dis[en];
 	}
-###最大环 —— 最小环
+###最小环
+	///inf不要开太大
+	void init()
+	{
+	    for(int i = 1; i <= n ; i++){
+	        for(int j = 1 ; j <= n ;j ++){
+	            g[i][j] = dist[i][j] = inf;
+	            pre[i][j] = i;
+	        }
+	    }
+	}
+	void floyd()
+	{
+	    for(int k = 1 ; k <= n ; k++){
+			//求最大环不要这部分循环, 普通的floyd就可以
+			//最后最大环为max(dist[i][i])
+	        for(int i = 1;  i < k ; i++){
+	            for(int j = i + 1 ; j < k ; j++){
+	                if(ans > g[i][j] + dist[i][k] + dist[k][j]){
+	                    ans = g[i][j] + dist[i][k] + dist[k][j];
+	                    num = 0;
+	                    int p = j;
+	                    while(p != i){
+	                        path[num++] = p;
+	                        p = pre[i][p];
+	                    }
+	                    path[num++] = i;
+	                    path[num++] = k;
+	                }
+	            }
+	        }
+	        for(int i = 1 ; i <= n ; i++){
+	            for(int j = 1 ; j <= n ; j++){
+	                if(g[i][j] > g[i][k] + g[k][j]){
+	                    g[i][j] = g[i][k] + g[k][j];
+	                    pre[i][j] = pre[k][j];
+	                }
+	            }
+	        }
+	    }
+	}
 
 ###最短路次短路计数
 	void dij()
@@ -794,23 +894,27 @@ hu#配置环境
 
 ###点联通
 ###边双联通分量
-	void Tarjan(int u, int fa)
+
+	void tarjan(int u, int pre)
 	{
 	    dfn[u] = low[u] = nindex++;
 	    instack[u] = 1;
 	    st[++top] = u;
 	    int v;
 	    for(int j = head[u]; ~j ; j = e[j].next) {
-	        if(j == fa)continue;
 	        v = e[j].v;
+	        if(v == pre)continue;
 	        if(!dfn[v]) {
-	            Tarjan(v, j ^ 1);
-	            if(low[u] > low[v])
-	                low[u] = low[v];
+	            tarjan(v, u);
+	            low[u] = min(low[u] , low[v]);
+	            if(low[v] > dfn[u]){
+	                bridge++;
+	                e[j].cut = 1;
+	                e[j ^ 1].cut = 1;
+	            }
 	        }
 	        else if(instack[v]) {
-	            if(low[u] > dfn[v])
-	                low[u] = dfn[v];
+	            low[u] = min(low[u] , dfn[v]);
 	        }
 	    }
 	    if(dfn[u] == low[u]) {
@@ -828,14 +932,11 @@ hu#配置环境
 	    clr(low , 0);
 	    clr(instack , 0);
 	    clr(cmp , 0);
-	    ncnt = 0;
-	    nindex = 0;
-	    top = 0;
-	    for(int i = 1; i <= N; i++)
-	        if(!cmp[i]) {
-	            Tarjan(i, -1);
-	        }
+	    ncnt = nindex = top = 0;
+	    bridge = 0;
+	    tarjan(1 , -1);
 	}
+
 ##匹配
 ###最大匹配 匈牙利
 	int V;
