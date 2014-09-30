@@ -727,6 +727,80 @@ hu#配置环境
 	        }
 	    }
 	}
+
+###K短路
+	//以终点t为源对反图spfa
+	struct Edge
+	{
+	    int v , c , next;
+	}e[MAXE] , re[MAXE];
+	struct node
+	{
+	    int now,g,f;
+	    bool operator <(const node a)const
+	    {
+	        if(a.f == f) return a.g < g;
+	        return a.f < f;
+	    }
+	};
+
+	int dis[MAXN];
+	int in[MAXN];
+	int head[MAXN];
+	int rehead[MAXN];
+	int cnt[MAXN];
+	int num;
+	void init()
+	{
+	    num = 0;
+	    clr(head , -1);
+	    clr(rehead , -1);
+	}
+	void adde(int u , int v , int c)
+	{
+	    e[num].v = v;
+	    e[num].c = c;
+	    e[num].next = head[u];
+	    head[u] = num;
+	    re[num].v = u;
+	    re[num].c = c;
+	    re[num].next = rehead[v];
+	    rehead[v] = num++;
+	}
+	int Astar(int src,int to)
+	{
+	    priority_queue<node> Q;
+	    int i,cnt = 0;
+	    if(src == to) k++;//在起点与终点是同一点的情况下，k要+1
+	    if(dis[src] == inf) return -1;
+	    node a,next;
+	    a.now = src;
+	    a.g = 0;
+	    a.f = dis[src];
+	    Q.push(a);
+	    while(!Q.empty())
+	    {
+	        a = Q.top();
+	        Q.pop();
+	        if(a.now == to)
+	        {
+	            cnt++;
+	            if(cnt == k)
+	                return a.g;
+	        }
+	        for(i = head[a.now]; i!=-1; i = e[i].next)
+	        {
+	            next = a;
+	            next.now = e[i].v;
+	            next.g = a.g+e[i].c;
+	            next.f = next.g+dis[next.now];
+	            Q.push(next);
+	
+	        }
+	    }
+	    return -1;//不能到达
+	}
+
 ##最小生成树
 ###最小树形图
 
@@ -937,6 +1011,67 @@ hu#配置环境
 	    tarjan(1 , -1);
 	}
 
+##2-SAT
+综述：每个条件的形式都是x[i]为真/假或者x[j]为真/假，
+每个x[i]拆成2*i和2*i+1两个点，分别表示x[i]为真，x[i]
+为假；加的每一条边之间的关系是and
+ 
+模型一：两者（A，B）不能同时取（但可以两个都不选）
+说明：A 为假或 B 为假
+那么选择了 A 就只能选择 B’，选择了 B 就只能选择 A’
+连边 A→B’，B→A’
+ 
+模型二：两者（A，B）不能同时不取（但可以两个都选）
+说明：A 为真或 B 为真
+那么选择了 A’就只能选择 B，选择了 B’就只能选择 A
+连边 A’→B，B’→A
+ 
+模型三：两者（A，B）要么都取，要么都不取
+说明：......
+那么选择了 A，就只能选择 B，选择了 B 就只能选择 A，选择了 A’就只能选择 B’，
+选择了 B’就只能选择 A’
+连边 A→B，B→A，A’→B’，B’→A’
+ 
+模型四：两者（A，A’）必取A
+那么，那么，该怎么说呢？先说连边吧。
+连边 A’→A
+ 
+模型五（补充） ：两者（A，B）两个必须不相同，即要么选A，要么选B
+逻辑表达：A||B 非 A||非 B
+连边：A 为真或 B 为真： A’--->B B’--->A;
+A 为假或 B 为假: A-->B’ B-->A
+说明：A 或 B，非 A 或非 B，前者表示两者至少有一个 true，后者表示至少有一个 false
+
+###2-SAT + 二分答案  统一建模的方式：
+
+同一组的两个状态分别存储在2*i和2*i+1两个节点，产生2*n个节点
+
+	for(int i=1;i<2*n;i++)
+		for(int j=0;j<i;j++)
+		{
+			if (i==(j^1)) continue;//记得j^1加上小括号
+			sat.add_clause(i,j);//枚举出的不属于同一组的不相容的两点
+		}
+###【O(NM)算法：求字典序最小的解】
+根据2-SAT建成的图中边的定义可以发现，若图中i到j有路径，则若i选，则j也要选；或者说，若j不选，则i也不能选；
+因此得到一个很直观的算法：
+（1）给每个点设置一个状态V，V=0表示未确定，V=1表示确定选取，V=2表示确定不选取。称一个点是已确定的当且仅当其V值非0。设立两个队列Q1和Q2，分别存放本次尝试选取的点的编号和尝试不选的点的编号。
+（2）若图中所有的点均已确定，则找到一组解，结束，否则，将Q1、Q2清空，并任选一个未确定的点i，将i加入队列Q1，将i'加入队列Q2；
+（3）找到i的所有后继。对于后继j，若j未确定，则将j加入队列Q1；若j'（这里的j'是指与j在同一对的另一个点）未确定，则将j'加入队列Q2；
+（4）遍历Q2中的每个点，找到该点的所有前趋（这里需要先建一个补图），若该前趋未确定，则将其加入队列Q2；
+（5）在（3）（4）步操作中，出现以下情况之一，则本次尝试失败，否则本次尝试成功：
+<1>某个已被加入队列Q1的点被加入队列Q2；
+<2>某个已被加入队列Q2的点被加入队列Q1;
+<3>某个j的状态为2；
+<4>某个i'或j'的状态为1或某个i'或j'的前趋的状态为1；
+（6）若本次尝试成功，则将Q1中的所有点的状态改为1，将Q2中所有点的状态改为2，转（2），否则尝试点i'，若仍失败则问题无解。
+该算法的时间复杂度为O(NM)（最坏情况下要尝试所有的点，每次尝试要遍历所有的边），但是在多数情况下，远远达不到这个上界。
+具体实现时，可以用一个数组vst来表示队列Q1和Q2。设立两个标志变量i1和i2（要求对于不同的i，i1和i2均不同，这样可以避免每次尝试都要初始化一次，节省时间），若vst[i]=i1则表示i已被加入Q1，若vst[i]=i2则表示i已被加入Q2。不过Q1和Q2仍然是要设立的，因为遍历（BFS）的时候需要队列，为了防止重复遍历，加入Q1（或Q2）中的点的vst值必然不等于i1（或i2）。中间一旦发生矛盾，立即中止尝试，宣告失败。
+
+该算法虽然在多数情况下时间复杂度到不了O(NM)，但是综合性能仍然不如下面的O(M)算法。不过，该算法有一个很重要的用处：求字典序最小的解！
+如果原图中的同一对点编号都是连续的（01、23、45……）则可以依次尝试第0对、第1对……点，每对点中先尝试编号小的，若失败再尝试编号大的。这样一定能求出字典序最小的解（如果有解的话），因为一个点一旦被确定，则不可更改。
+如果原图中的同一对点编号不连续（比如03、25、14……）则按照该对点中编号小的点的编号递增顺序将每对点排序，然后依次扫描排序后的每对点，先尝试其编号小的点，若成功则将这个点选上，否则尝试编号大的点，若成功则选上，否则（都失败）无解。
+
 ##匹配
 ###最大匹配 匈牙利
 	int V;
@@ -1112,115 +1247,4 @@ hu#配置环境
 	        }
 	    }
 	    return maxflow;
-	}
-
-#计算几何
-##二维
-
-	///考虑误差的加法运算
-	double add(double a , double b)
-	{
-	    if(abs(a + b) < eps * (abs(a) + abs(b)))return 0;
-	    return a + b;
-	}
-	///二维向量结构体
-	struct P
-	{
-	    double x , y;
-	    P(){}
-	    P(double x , double y) : x(x) , y(y){}
-	    P operator + (P p)
-	    {
-	        return P(add(x , p.x) , add(y , p.y));
-	    }
-	    P operator - (P p)
-	    {
-	        return P(add(x , - p.x) , add(y , - p.y));
-	    }
-	    P operator * (double d)
-	    {
-	        return P(x * d , y * d);
-	    }
-	    double dot(P p)///点乘
-	    {
-	        return add(x * p.x  , y * p.y);
-	    }
-	    double det(P p)///叉乘
-	    {
-	        return add(x * p.y , - y * p.x);
-	    }
-	};
-	///判断点q是否在线段p1-p2上
-	bool on_seg(P p1 , P p2 , P q)
-	{
-	    return (p1 - q).det(p2 - q) == 0 && (p1 - q).dot(p2 - q) <= 0;
-	}
-	///计算直线p1-p2与直线q1-q2的交点坐标
-	P intersection(P p1 , P p2 , P q1 , P q2)
-	{
-	    return p1 + (p2 - p1) * ((q2 - q1).det(q1 - p1) / (q2 - q1).det(p2 - p1));
-	}
-	///字典序比较
-	bool cmp_x(const P& p , const P& q)
-	{
-	    if(p.x != q.x)return p.x < q.x;
-	    return p.y < q.y;
-	}
-	///求凸包
-	vector<P> convex_hull(P* ps , int n)
-	{
-	    sort(ps , ps + n , cmp_x);
-	    int k = 0;///凸包顶点数
-	    vector<P> qs(n * 2);///构造中的凸包
-	    ///构造凸包的下侧
-	    for(int i = 0 ; i < n ; i++)
-	    {
-	        while(k > 1 && (qs[k - 1] - qs[k - 2]).det(ps[i] - qs[k - 1]) <= 0)k--;
-	        qs[k++] = ps[i];
-	    }
-	    ///构造凸包的上侧
-	    for(int i = n - 2 , t = k ; i >= 0 ; i--)
-	    {
-	        while(k > t && (qs[k - 1] - qs[k - 2]).det(ps[i] - qs[k - 1]) <= 0)k--;
-	        qs[k++] = ps[i];
-	    }
-	    qs.resize(k - 1);
-	    return qs;
-	}
-	///距离的平方
-	double dist(P p , P q)
-	{
-	    return (p - q).dot(p - q);
-	}
-	int n;
-	P ps[MAXN];
-	///旋转卡壳
-	void solve()
-	{
-	    vector<P> qs = convex_hull(ps , n);
-	    int n = qs.size();
-	    if(n == 2)///特别处理凸包退化的情况
-	    {
-	        printf("%.0f\n" , dist(qs[0] , qs[1]));
-	        return ;
-	    }
-	    int i = 0, j = 0;
-	    for(int k = 0  ; k < n ; k++)
-	    {
-	        if(!cmp_x(qs[i] , qs[k]))i = k;///最右（上）点的序号
-	        if(cmp_x(qs[j] , qs[k]))j = k;///最左（下）点的序号
-	    }
-	    double res = 0;
-	    int si = i , sj = j;
-	    while(i != sj || j != si)///直到旋转180度
-	    {
-	        res = max(res , dist(qs[i] , qs[j]));
-	        ///判断先转到边i——(i + 1)的法线方向还是边j——(j + 1)的法线方向
-	        if((qs[(i + 1) % n] - qs[i]).det(qs[(j + 1) % n] - qs[j]) < 0)
-	        {
-	            i = (i + 1) % n;
-	        }
-	        else j = (j + 1) % n;
-	    }
-	    printf("%.0f\n" , res);
 	}
