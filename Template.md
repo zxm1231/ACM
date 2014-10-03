@@ -1,4 +1,4 @@
-hu#配置环境
+#配置环境
 
 - codeblocks    在codeblocks --> setting -->环境变量
 
@@ -10,7 +10,7 @@ hu#配置环境
 	FileWriter fileWriter=new FileWriter("c:\\Result.txt");
 	int [] a=new int[]{11112,222,333,444,555,666};
 	for (int i = 0; i < a.length; i++) {
-	fileWriter.write(String.valueOf(a[i])+" ");
+		fileWriter.write(String.valueOf(a[i])+" ");
 	}
 ##头文件
 
@@ -98,6 +98,7 @@ hu#配置环境
 	    
 	    return 0;
 	}
+
 ##输入输出挂
 	int Scan()
 	{
@@ -607,11 +608,10 @@ hu#配置环境
 	    return f[rmq(p[a],p[b])];
 	}
 
-##最小覆盖圆
 
 #图论
 ##最短路
-###dij
+###Dijstra
 	int dij(){
 	    priority_queue<pii, vector<pii>, greater<pii> >Q;
 	    memset(vis, false, sizeof(vis));
@@ -952,6 +952,149 @@ hu#配置环境
 
 ###最小生成树计数
 ###生成树计数
+##拓扑排序
+###1.朴素算法：
+将入度为0的点加入队列，再依次取出队列中的元素，把其出边依次遍历，并且将边指向的节点入度减一，同时将入度为0的点加入队列。
+
+	queue < int > Q;
+	memset(idegree, 0, sizeof(idegree));
+	memset(last, -1, sizeof(last));
+	tot = 0;
+	for(int i = 0; i < m; i++)
+	{
+		int x, y;
+		scanf("%d%d", &x, &y);
+		addedge(x, y);
+		idegree[y]++;
+	}
+	int now = 0;
+	for(int i = 1; i <= n; i++)
+		if(idegree[i] == 0)
+			Q.push(i);
+	while(!Q.empty())
+	{
+		int u = Q.top();
+		Q.pop();
+		now++;
+		printf("%d", u);
+		if(now < n) putchar(' ');
+		else putchar('\n');
+		for(int j = last[u]; -1 != j; j = edge[j].next)
+		{
+			int v = edge[j].v;
+			idegree[v]--;
+			if(idegree[v] == 0)
+				Q.push(v);
+		}
+	}
+
+###2.求字典序最小的方案：
+
+		当各点标号均互不相同时，直接将队列改为优先队列；
+		当存在重复标号时？？？？
+		
+###3.基于DFS的拓扑排序（很短很好写）
+		记录各点完成访问的时刻(完成时间),用DFS遍历一次整个图,得出各结点的完成时间,然后按完成时间倒序排列就得到了图的拓扑序列
+
+	/* 拓扑排序         O(e)
+	 * 确保是有向无环图！
+	 * 结果逆序存放在sta中！
+	 * */
+	VI ve[Maxn];
+	bool vis[Maxn];
+	int sta[Maxn], top;
+	void dfsTopo(int u) {
+	    vis[u] = true;
+	    for (int i = 0; i < ve[u].size(); i ++ )
+	           if (!vis[ve[u][i]])
+	               dfsTopo(ve[u][i]);
+	    sta[top ++ ] = u;
+	}
+	void Toposort(int n) {
+	    memset(vis, 0, sizeof(vis));
+	    top = 0;
+	    for (int i = 1; i <= n; i ++ )
+	        if (!vis[i]) dfsTopo(i);
+	}
+###4.拓扑排序数
+求树的拓扑排序数：
+dp[root] = num[root] ! / (num[i] , i in tree[root])
+
+###5.关键路径
+求关键路径：
+#### 关键节点：
+		正向拓扑序，求每个点最早到达时间early[i] = max(early[i], early[j] + edge[k]);
+		利用汇点的early值，反向拓扑求每个点迟到达时间late[i] = min(late[i], late[j] - edge[k]);
+		关键节点early == late
+		PS：
+				最早开始时间可以理解为是必须等到之前的任务完成才能做
+				最迟开始时间可以理解为是必须为后面的任务留出足够的时间
+		
+#### 关键路径：
+	源点到汇点的最长路（可能有多条）
+	/*
+	* 求出early 和 latest
+	* idegree  odegree 出入度
+	* 中间有重建图，所以保存了一条边的u 和 v
+	*/
+	
+	memset(idegree, 0, sizeof(idegree));
+	memset(odegree, 0, sizeof(odegree));
+	memset(last, -1, sizeof(last));
+	tot = 0;
+	for(int i = 0; i < m; i++)
+	{
+		int x, y, z;
+		scanf("%d%d%d", &x, &y, &z);
+		addedge(x, y, z);
+		idegree[y]++;
+		odegree[x]++;
+	}
+	memset(early, 0, sizeof(early));
+	for(int i = 1; i <= n; i++)
+		if(!idegree[i])
+			Q.push(i);
+	while(!Q.empty())
+	{
+		int u = Q.front();
+		Q.pop();
+		for(int j = last[u]; -1 != j; j = edge[j].next)
+		{
+			int v = edge[j].v;
+			idegree[v]--;
+			if(!idegree[v])
+				Q.push(v);
+			int temp = early[u] + edge[j].len;
+			early[v] = max(early[v], temp);
+		}
+	}
+	memset(last, -1, sizeof(last));
+	tot = 0;
+	for(int i = 0; i < m; i++)
+		addedge(edge[i].v, edge[i].u, edge[i].len);
+	memset(latest, CLRINF, sizeof(latest));
+	cout << latest[0] << endl;
+	for(int i = 1; i <= n; i++)
+		if(odegree[i] == 0)
+		{
+			latest[i] = early[i];
+			Q.push(i);
+		}
+	while(!Q.empty())
+	{
+		int u = Q.front();
+		Q.pop();
+		for(int j = last[u]; -1 != j; j = edge[j].next)
+		{
+			int v = edge[j].v;
+			odegree[v]--;
+			if(!odegree[v])
+				Q.push(v);
+			int temp = latest[u] - edge[j].len;
+			latest[v] = min(latest[v], temp);
+		}
+	}
+
 ##连通性
 ###SCC	
 	注释部分为判断仙人掌图
@@ -1001,7 +1144,7 @@ hu#配置环境
 	    }
 	}
 
-###点联通
+###点双联通分量
 ###边双联通分量
 
 	void tarjan(int u, int pre)
@@ -1044,6 +1187,99 @@ hu#配置环境
 	    ncnt = nindex = top = 0;
 	    bridge = 0;
 	    tarjan(1 , -1);
+	}
+
+###无向图全局最小割
+
+	int n , m;
+	int combine[MAXN];
+	int g[MAXN][MAXN] , node[MAXN];
+	int st , en , minCut, k;
+	int top, sta[MAXN];
+	int maxi;
+	int vis[MAXN];
+	int wet[MAXN];
+	int Search(int n)
+	{
+	    clr(vis,0);
+	    clr(wet,0);
+	    int minCut = 0;
+	    int temp = -1;
+	    st = -1, en = -1;
+	    int top = 0;
+	    for(int i=0; i< n; i++)
+	    {
+	        int maxi = -INF;
+	        for(int j = 0; j < n; j++)
+	        {
+	            int u = node[j];
+	            if(!combine[u] && !vis[u] && wet[u] > maxi)
+	            {
+	                temp = u;
+	                maxi = wet[u];
+	            }
+	        }
+	        sta[top++] = temp;
+	        vis[temp] = true;
+	        if(i == n - 1)
+	            minCut = maxi;
+	        for(int j = 0; j < n; j++)
+	        {
+	            int u = node[j];
+	            if(!combine[u] && !vis[u])
+	            {
+	                wet[u] += g[temp][u];
+	            }
+	        }
+	    }
+	    st = sta[top - 2];
+	    en = sta[top - 1];
+	    for(int i = 0; i < top; i++)  node[i] = sta[i];
+	    return minCut;
+	}
+	
+	int SW(int n)
+	{
+	    int ans = inf;
+	    clr(combine,0);
+	    for(int i = 0; i < n; i++)
+	        node[i] = i;
+	    for(int i = 1; i < n; i++)
+	    {
+	        k = n - i + 1;
+	        int cur = Search(k);
+	        if(cur < ans)
+	        {
+	            ans = cur;
+	        }
+	        if(ans == 0) return ans;
+	        combine[en] = true;
+	        for(int j = 0; j < n; j++)
+	        {
+	            if(j == st) continue;
+	            if(!combine[j])
+	            {
+	                g[st][j] += g[en][j];
+	                g[j][st] += g[j][en];
+	            }
+	        }
+	    }
+	    return ans;
+	}
+	
+	int main()
+	{
+	    while(~scanf("%d%d" , &n , &m)){
+	        clr(g , 0);
+	        for(int i = 0 ; i < m ; i++){
+	            int u , v , c;
+	            scanf("%d%d%d" , &u , &v , &c);
+	            g[u][v] += c;
+	            g[v][u] += c;
+	        }
+	        printf("%d\n" , SW(n));
+	    }
+	    return 0;
 	}
 
 ##2-SAT
@@ -1161,6 +1397,175 @@ A 为假或 B 为假: A-->B’ B-->A
 				clr(vis, 0);
 				if(dfs(i)) match++;
 			}
+	}
+###一般图最大匹配——带花树
+	#define N 1100
+	#define M 200100
+	#define LEN 100100
+	#define INF (1 << 30)
+	typedef long long LL;
+	
+	int n, head, tail, Start, Finish;
+	int match[N];     //表示哪个点匹配了哪个点
+	int Father[N];   //这个就是增广路的father……但是用起来太精髓了
+	int base[N];     //该点属于哪朵花
+	int Q[N];
+	bool mark[N], map[N][N], InBlossom[N], in_Queue[N];
+	
+	void init()
+	{
+	    int x,y;
+	    scanf("%d",&n);
+	    while (scanf("%d%d",&x,&y)!=EOF)
+	        map[x][y]=map[y][x]=1;
+	}
+	
+	void BlossomContract(int x,int y)
+	{
+	    clr(mark, false);
+	    clr(InBlossom,false);
+	#define pre father[match[i]]
+	    int lca,i;
+	    for (i=x; i; i=pre)
+	    {
+	        i=base[i];
+	        mark[i]=true;
+	    }
+	    for (i=y; i; i=pre)
+	    {
+	        i=base[i];    //寻找lca之旅……一定要注意i=base[i]
+	        if (mark[i])
+	        {
+	            lca=i;
+	            break;
+	        }
+	    }
+	    for (i=x; base[i]!=lca; i=pre)
+	    {
+	        if (base[pre]!=lca) father[pre]=match[i]; //对于BFS树中的父边是匹配边的点，father向后跳
+	        InBlossom[base[i]]=true;
+	        InBlossom[base[match[i]]]=true;
+	    }
+	    for (i=y; base[i]!=lca; i=pre)
+	    {
+	        if (base[pre]!=lca) father[pre]=match[i]; //同理
+	        InBlossom[base[i]]=true;
+	        InBlossom[base[match[i]]]=true;
+	    }
+	#undef pre
+	    if (base[x]!=lca) father[x]=y;     //注意不能从lca这个奇环的关键点跳回来
+	    if (base[y]!=lca) father[y]=x;
+	    for (i=1; i<=n; i++)
+	        if (InBlossom[base[i]])
+	        {
+	            base[i]=lca;
+	            if (!in_Queue[i])
+	            {
+	                Q[++tail]=i;
+	                in_Queue[i]=true;     //要注意如果本来连向BFS树中父结点的边是非匹配边的点，可能是没有入队的
+	            }
+	        }
+	}
+	
+	void Change()
+	{
+	    int x,y,z;
+	    z=Finish;
+	    while (z)
+	    {
+	        y=father[z];
+	        x=match[y];
+	        match[y]=z;
+	        match[z]=y;
+	        z=x;
+	    }
+	}
+	
+	void FindAugmentPath()
+	{
+	    clr(father, 0);
+	    clr(in_Queue, false);
+	    for (int i=1; i<=n; i++) base[i]=i;
+	    head=0;
+	    tail=1;
+	    Q[1]=Start;
+	    in_Queue[Start]=1;
+	    while (head!=tail)
+	    {
+	        int x=Q[++head];
+	        for (int y=1; y<=n; y++)
+	            if (map[x][y] && base[x]!=base[y] && match[x]!=y)   //无意义的边
+	                if ( Start==y || match[y] && father[match[y]] )    //精髓地用father表示该点是否
+	                    BlossomContract(x,y);
+	                else if (!father[y])
+	                {
+	                    father[y]=x;
+	                    if (match[y])
+	                    {
+	                        Q[++tail]=match[y];
+	                        in_Queue[match[y]]=true;
+	                    }
+	                    else
+	                    {
+	                        Finish=y;
+	                        Change();
+	                        return;
+	                    }
+	                }
+	    }
+	}
+	
+	void Edmonds()
+	{
+	    clr(match, 0);
+	    for (Start=1; Start<=n; Start++)
+	        if (match[Start]==0)
+	            FindAugmentPath();
+	}
+	
+	void output()
+	{
+	    clr(mark, false);
+	    int cnt=0;
+	    for (int i=1; i<=n; i++)
+	        if (match[i]) cnt++;
+	    printf("%d\n",cnt);
+	    for (int i=1; i<=n; i++)
+	        if (!mark[i] && match[i])
+	        {
+	            mark[i]=true;
+	            mark[match[i]]=true;
+	            printf("%d %d\n",i,match[i]);
+	        }
+	}
+	
+	int main()
+	{
+	//    freopen("input.txt","r",stdin);
+	    init();
+	    Edmonds();
+	    output();
+	    return 0;
+	}
+
+##欧拉回路
+	/*欧拉回路, 有向图*/
+	vec ve[Maxn];
+	int cur[Maxn];
+	stack<int> eulerianWalk(int u) { //返回欧拉回路的逆序
+	    stack<int> sta, ret;
+	    sta.push(u);
+	    cur[u] = 0;
+	    while (!sta.empty()) {
+	        u = sta.top();
+	        sta.pop();
+	        while (cur[u] < ve[u].size()) {
+	            sta.push(u);
+	            u = ve[u][cur[u] ++ ];
+	        }
+	        ret.push(u);
+	    }
+	    return ret;
 	}
 
 ##网络流
@@ -1393,3 +1798,130 @@ A 为假或 B 为假: A-->B’ B-->A
 	        f+=Min;
 	    }
 	}
+###ZKW流
+	struct node
+	{
+	    int u, v, c, w, next;
+	}edge[M];
+	int tot, last[N];
+	int dist[N],pre[N];
+	bool visit[N];
+	int n, m, src, des;
+	int flow, cost, value;
+	
+	void addedge(int u, int v, int c, int w)
+	{
+	    edge[tot].u = u; edge[tot].v = v; edge[tot].c = c; edge[tot].w = w; edge[tot].next = last[u]; last[u] = tot++;
+	    edge[tot].u = v; edge[tot].v = u; edge[tot].c = 0; edge[tot].w = -w; edge[tot].next = last[v]; last[v] = tot++;
+	}
+	
+	int Aug(int u, int m)
+	{
+		if(u == des)
+		{
+			cost += value * m;
+			flow += m;
+			return m;
+		}
+		visit[u] = true;
+		int l = m;
+		for(int j = last[u]; j != -1; j = edge[j].next)
+		{
+		    int v = edge[j].v, c = edge[j].c, w = edge[j].w;
+			if(c && !w && !visit[v])
+			{
+				int delta = Aug(v, l < c ? l : c);
+				edge[j].c -= delta;
+				edge[j ^ 1].c += delta;
+				l -= delta;
+				if(!l) return m;
+			}
+		}
+		return(m - l);
+	}
+	
+	bool ModLabel(int src, int des)
+	{
+		int d = INF;
+		for(int i = 0; i <= des; i++)
+			if(visit[i])
+			{
+				for(int j = last[i]; j != -1; j = edge[j].next)
+				{
+					if(edge[j].c && !visit[edge[j].v] && edge[j].w < d) d = edge[j].w;
+				}
+			}
+		if(d == INF) return false;
+		for(int i = 0; i <= des; i++)
+		  if(visit[i])
+		  {
+			  for(int j = last[i]; j != -1; j = edge[j].next)
+			  {
+				  edge[j].w -= d;
+				  edge[j^1].w += d;
+			   }
+		  }
+		value += d;
+		return true;
+	}
+	
+	void MinCostMaxFlow(int src, int des)
+	{
+	    flow = cost = value = 0;
+	    int xx = 0;
+	    do
+	    {
+	        //cout << xx ++ << endl;
+	        do
+	        {
+	            memset(visit, 0, sizeof(visit));
+	        }while(Aug(src, INF));
+	    }while(ModLabel(src, des));
+	}
+###注意：
+B[u,v]表示(u,v)流量的下限，C[u,v]表示(u,v)流量的上限, F[u,v]表示(u,v)的流量, 
+g[u,v]表示F[u,v]-B[u,v] 显然 0<=g[u,v]<=C[u,v]-B[u,v]  
+
+####1.无源汇的可行流 :
+我们要想办法转换为有源汇的最大流问题.
+考虑流量都为g[,]且容量为C[,]-B[,]的网络，貌似有点接近最后的转换方式了，
+为了不忽略B[,]这一条件，我们把g[,]最后强制加上B[,].
+但会发现一个致命漏洞，加上后就未必满足流量平衡了！
+对于这个有两种办法解决..
+一种方法是添加附加源汇S,T  对于某点 u, 设 M(u)=sigma(B[i,u])-sigma(B[u,j]) ，
+则根据流量平衡条件有 M(u)同时等于 sigma(g[u,j])-sigma(g[i,u])
+若M(u)<0，即sigma(g[u,j]) < sigma(g[i,u]) 进入u的流量比从u 出去的多，
+所以 u -> T 连容量为  -(sigma(B[i,u])-sigma(B[u,j]) ) 的边
+同理. M(u)>0时，即 S->u 连容量为 sigma(B[i,u])-sigma(B[u,j])  的边.
+然后再对于任意边(i,u)/(u,j) 连一条 C[u,v]-B[u,v]的边.
+这样只需对新的网络求一遍最大流即可. 若出附加源点的边都满流即是存在可行流，反之不然.
+满流的必要条件是显然的. 不满流不能保证加上B[,]后流量平衡. 前面都白费了.
+另一种方法相对简单.其实类似，本质相同.
+仍添加附加源汇S,T 对于某边 (u,v) 在新网络中连边 S->v 容量 B[u,v]   ,  u->T 容量 B[u,v]  ， u->v 容量 C[u,v]-B[u,v]
+可以这样理解，边S->v : 求的时候直接从S流过来的流量值B[u,v], 与最终解中边(u,v)强制加上的从 u流过来的流量B[u,v]，对v点的流量平衡条件的影响实质等价.
+边u->T同理.
+最后，一样也是求一下新网络的最大流，判断从附加源点的边，是否都满流即可.
+
+具体的解？根据最前面提出的强制转换方式，边(u,v)的最终解中的实际流量即为g[u,v]+B[u,v]
+为什么这种方法只适用于无源汇上下界可行流？
+本质上是因为S,T并不满足流量平衡，而上述的方法都是考虑到每点的流量平衡而建的. 但有些时候貌似还是可以出正确解. 至于有没有什么解决方法，下次再想想吧~【标记下】
+例题 ZOJ 2314 / SGU 194 Reactor Cooling http://acm.sgu.ru/problem.php?contest=0&problem=194 
+####2.有源汇的上下界可行流
+从汇点到源点连一条上限为INF，下限为0的边. 按照 1.无源汇的上下界可行流一样做即可.
+改成无源汇后，求的可行流是类似环的，流量即T->S边上的流量.  这样做显然使S,T也变得流量平衡了.
+####3.有源汇的上下界最大流
+方法一： 2.有源汇上下界可行流中，从汇点到源点的边改为连一条上限为INF，下限为x的边.
+因为显然x>ans即MIN(T->S )> MAX(S->T) ,会使求新网络的无源汇可行流无解的（S,T流量怎样都不能平衡）
+而x<=ans会有解.
+所以满足二分性质，二分x，最大的x使得新网络有解的即是所求答案原图最大流.
+方法二：从汇点T到源点S连一条上限为INF，下限为0的边，变成无源汇的网络.  照求无源汇可行流的方法(如1)，建附加源点S'与汇点T'，求一遍S'->T‘的最大流. 再把从汇点T到源点S的这条边拆掉 . 求一次从S 到T 的最大流即可. （关于S',T'的边好像可以不拆？）（这样一定满足流量平衡？）表示这方法我也没有怎么理解.
+####4.有源汇的上下界最小流
+方法一： 2.有源汇上下界可行流中，从汇点到源点的边改为连一条上限为x，下限为0的边.
+与3同理，二分上限，最小的x使新网络无源汇可行流有解，即是所求答案原图最小流.
+方法二:  照求无源汇可行流的方法(如1)，建附加源点S'与汇点T'，求一遍S'->T‘的最大流. 但是注意这一遍不加汇点到源点的这条边，即不使之改为无源汇的网络去求解. 求完后，再加上那条汇点到源点上限INF的边. 因为这条边下限为0，所以S',T'无影响. 再直接求一遍S'->T'的最大流. 若S’出去的边全满流，T->S边上的流量即为答案原图最小流，否则若不全满流即无解. 
+和求3.有源汇的上下界最大流过程相反，感性理解是:  
+首先明确，我们的方法是通过加边转化成对任一点都有流量平衡的无源汇的网络，进行求解.
+即最终解只能是加上边后，求的无源汇可行流，即T->S这边上的流量.  不改成无源汇的直接求的解是未必正确的，在（1）中已经提到.
+然后，因为第一遍做的时候并无这条边，所以S->T的流量在第一遍做的时候都已经尽力往其他边流了. 于是加上T->S这条边后，都是些剩余的流不到其他边的流量. 从而达到尽可能减少T->S这边上的流量的效果，即减小了最终答案.
+感觉上第一遍做的既然是不改成无源汇直接求的，应该是错误的？
+这里不是错误的. 首先我们的解都是按照第二遍所求的而定，其次这里这样做本质是延迟对T->S这条边的增流.
