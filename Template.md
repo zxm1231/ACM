@@ -1248,3 +1248,113 @@ A 为假或 B 为假: A-->B’ B-->A
 	    }
 	    return maxflow;
 	}
+##最小费用流
+###spfa增广费用流
+	struct Edge
+	{
+	    int from;
+	    int to;
+	    int next;
+	    int re;//记录逆边的下标
+	    int cap;//容量
+	    int cost;//费用
+	}e[MAXE];
+	int pre[MAXN];
+	int head[MAXN];
+	bool in[MAXN];
+	int que[MAXN];
+	int dis[MAXN];
+	int num;//边的总数
+	void init()
+	{
+	    num = 0;
+	    clr(head , -1);
+	}
+	void add(int u,int v,int ca,int co)
+	{
+	    e[num].from=u;
+	    e[num].to=v;
+	    e[num].cap=ca;
+	    e[num].cost=co;
+	    e[num].re=num+1;
+	    e[num].next=head[u];
+	    head[u]=num++;
+	 
+	    e[num].from=v;//加逆边
+	    e[num].to=u;
+	    e[num].cap=0;
+	    e[num].cost=-co;
+	    e[num].re=num-1;
+	    e[num].next=head[v];
+	    head[v]=num++;
+	}
+	int n;
+	int start;
+	int end;
+	bool SPFA()
+	{
+	    int front=0,rear=0;
+	    for(int v=0;v<=n;v++)
+	    {
+	        if(v==start)
+	        {
+	            que[rear++]=v;
+	            in[v]=true;
+	            dis[v]=0;
+	        }
+	        else
+	        {
+	            dis[v]=INF;
+	            in[v]=false;
+	        }
+	    }
+	    while(front!=rear)
+	    {
+	        int u=que[front++];
+	        in[u]=false;
+	        if(front>=MAXN)front=0;
+	        for(int i=head[u];i!=-1;i=e[i].next)
+	        {
+	            int v=e[i].to;
+	            if(e[i].cap&&dis[v]>dis[u]+e[i].cost)
+	            {
+	                dis[v]=dis[u]+e[i].cost;
+	                pre[v]=i;
+	                if(!in[v])
+	                {
+	                    que[rear++]=v;
+	                    in[v]=true;
+	                    if(rear>=MAXN)rear=0;
+	                }
+	            }
+	        }
+	    }
+	    if(dis[end]==INF)return false;
+	    return true;
+	}
+	int c;//费用
+	int f;//最大流
+	 
+	void minCostMaxflow()
+	{
+	    c=f=0;
+	    int u,p;
+	    while(SPFA())
+	    {
+	        int Min=INF;
+	        for(u=end;u!=start;u=e[p].from)
+	        {
+	            p=pre[u];
+	            Min=min(Min,e[p].cap);
+	        }
+	        for(u=end;u!=start;u=e[p].from)
+	        {
+	            p=pre[u];
+	            e[p].cap-=Min;
+	            e[e[p].re].cap+=Min;
+	 
+	        }
+	        c+=dis[end]*Min;
+	        f+=Min;
+	    }
+	}
