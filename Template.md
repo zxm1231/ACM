@@ -803,47 +803,38 @@ hu#配置环境
 
 ##最小生成树
 ###Prim
-	struct Node
+	int lowcost[MAXN],closest[MAXN];
+	int prim(int v0)
 	{
-	    int v , dis;
-	    bool operator < (const Node & n)const{
-	        return dis > n.dis;
+	    int i,j,mindis,minone;
+	    int ans = 0;/*用来记录最小生成树的总长度*/
+	    /*各点距离初始化*/
+	    for(i = 0;i < n;i++)
+	    {
+	        lowcost[i] = cost[v0][i];
+	        closest[i] = v0;
 	    }
-	};
-	int vis[MAXN];
-	int m[MAXN][MAXN]; //邻接矩阵
-	int dis[MAXN];
-	priority_queue<Node> q;
-	int n;
-	int prim()
-	{
-	    int size = 1 , sum = 0;
-	    vis[1] = 1;
-	    Node node;
-	    for(int i = 2 ; i <= n ; i++){
-	        dis[i] = m[1][i];
-	        node.v = i;
-	        node.dis = m[1][i];
-	        q.push(node);
+	    for(i = 0;i < n-1;i++)
+	    {
+	        mindis = inf;
+	        for(j = 0;j < n;j++)
+	          if(lowcost[j] && mindis > lowcost[j])
+	          {
+	              mindis = lowcost[j];
+	              minone = j;
+	          }
+	        /*将找到的最近点加入最小生成树*/
+	        ans += lowcost[minone];
+	        lowcost[minone] = 0;
+	        /*修正其他点到最小生成树的距离*/
+	        for(j = 0;j < n;j++)
+	          if(cost[j][minone] < lowcost[j])
+	          {
+	              lowcost[j] = cost[j][minone];//邻接矩阵
+	              closest[j] = minone;
+	          }
 	    }
-	    while(size < n){
-	        node = q.top();
-	        q.pop();
-	        if(vis[node.v])continue;
-	        vis[node.v] = 1;
-	        size ++;
-	        sum += node.dis;
-	        for(int i = 2 ; i <= n ; i++){
-	            if(!vis[i] && dis[i] > m[node.v][i]){
-	                dis[i] = m[node.v][i];
-	                Node tmp;
-	                tmp.v = i;
-	                tmp.dis = m[node.v][i];
-	                q.push(tmp);
-	            }
-	        }
-	    }
-	    return sum;
+	    return ans;
 	}
 
 ###最小树形图
