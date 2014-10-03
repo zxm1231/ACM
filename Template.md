@@ -802,6 +802,50 @@ hu#配置环境
 	}
 
 ##最小生成树
+###Prim
+	struct Node
+	{
+	    int v , dis;
+	    bool operator < (const Node & n)const{
+	        return dis > n.dis;
+	    }
+	};
+	int vis[MAXN];
+	int m[MAXN][MAXN]; //邻接矩阵
+	int dis[MAXN];
+	priority_queue<Node> q;
+	int n;
+	int prim()
+	{
+	    int size = 1 , sum = 0;
+	    vis[1] = 1;
+	    Node node;
+	    for(int i = 2 ; i <= n ; i++){
+	        dis[i] = m[1][i];
+	        node.v = i;
+	        node.dis = m[1][i];
+	        q.push(node);
+	    }
+	    while(size < n){
+	        node = q.top();
+	        q.pop();
+	        if(vis[node.v])continue;
+	        vis[node.v] = 1;
+	        size ++;
+	        sum += node.dis;
+	        for(int i = 2 ; i <= n ; i++){
+	            if(!vis[i] && dis[i] > m[node.v][i]){
+	                dis[i] = m[node.v][i];
+	                Node tmp;
+	                tmp.v = i;
+	                tmp.dis = m[node.v][i];
+	                q.push(tmp);
+	            }
+	        }
+	    }
+	    return sum;
+	}
+
 ###最小树形图
 
 	最小树形图（根固定） O(VE)
