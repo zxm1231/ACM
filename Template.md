@@ -13,49 +13,46 @@
 		fileWriter.write(String.valueOf(a[i])+" ");
 	}
 ##头文件
-
-	#include <algorithm>　　　
-	#include <bitset>　　　　
+	
+	#include <algorithm>
+	#include <bitset>　
 	#include <cctype>
 	#include <cerrno>
 	#include <clocale>
 	#include <cmath>
-	#include <complex>　　　　
+	#include <complex>　　
 	#include <cstdio>
 	#include <cstdlib>
 	#include <cstring>
 	#include <ctime>
-	#include <deque>　　　　　
-	#include <exception>　　　
+	#include <deque>
+	#include <exception>
 	#include <fstream>
-	#include <functional>　　　
+	#include <functional>
 	#include <limits>
-	#include <list>　　　　　
-	#include <map>　　　　　　
+	#include <list>
+	#include <map>
 	#include <iomanip>
-	#include <ios>　　　　　　
-	#include <iosfwd>　　　　　
+	#include <ios>
+	#include <iosfwd>
 	#include <iostream>
-	#include <istream>　　　　
-	#include <ostream>　　　　
-	#include <queue>　　　　　
-	#include <set>　　　　　　
-	#include <sstream>　　　　
-	#include <stack>　　　　　
-	#include <stdexcept>　　　
-	#include <streambuf>　　　
-	#include <string>　　　　
-	#include <utility>　　　　
-	#include <vector>　　　　　
+	#include <istream>
+	#include <ostream>
+	#include <queue>
+	#include <set>
+	#include <sstream>
+	#include <stack>
+	#include <stdexcept>
+	#include <streambuf>
+	#include <string>
+	#include <utility>
+	#include <vector>
 	#include <cwchar>
 	#include <cwctype>
-	 
+	
 	using namespace std;
-	//#define Online_Judge
 	#define outstars cout << "***********************" << endl;
 	#define clr(a,b) memset(a,b,sizeof(a))
-	#define lson l , mid  , rt << 1
-	#define rson mid + 1 , r , rt << 1 | 1
 	#define mk make_pair
 	#define pb push_back
 	#define sz size()
@@ -66,38 +63,23 @@
 	#define deq(a , b) fabs(a - b) < eps
 	
 	const int MAXN = 40000 + 50;
-	const int MAXV = 4000 + 50;
+	const int MAXE = 4000 + 50;
 	const int MAXQ = 1000000 + 50;
-	const int sigma_size = 26;
-	 
+	
 	const int inf = 0x3f3f3f3f;
 	const int INF = ~0U >> 1;
 	const long long LLinf = 0x3FFFFFFFFFFFFFFFLL;
-	const long long LLINF = 1 << 63 - 1;
+	const long long LLINF = (1LL << 63) - 1;
 	const int IMIN = 0x80000000;
-	 
-	 
-	const long long MOD = 1000000000 + 7;
+	
 	const int mod = 10007;
-	typedef long long LL;
+	const long long MOD = 1000000000 + 7;
 	const double PI = acos(-1.0);
+	
+	typedef long long LL;
 	typedef pair<int , int> pii;
 	typedef vector<int> vec;
-	typedef vector<vec> mat;
-	 
-	#define Bug(s) cout << "s = " << s << endl;
 	///#pragma comment(linker, "/STACK:102400000,102400000")
-	 
-	int main()
-	{
-	    //ios::sync_with_stdio(false);
-	    #ifdef Online_Judge
-	        freopen(".in","r",stdin);
-	        freopen(".out","w",stdout);
-	    #endif Online_Judge
-	    
-	    return 0;
-	}
 
 ##输入输出挂
 	int Scan()
@@ -431,34 +413,6 @@
 			x[n].print();
 		}
 	}
-##矩阵快速幂
-	mat mul(mat & A , mat & B)  
-	{  
-	    mat C(A.size() , vec(B[0].size()));  
-	    for(int i = 0 ; i < A.size() ; i++)  
-	    {  
-	        for(int k = 0 ; k < B.size() ; k++)  
-	        {  
-	            for(int j = 0  ; j < B[0].size() ; j++)  
-	            {  
-	                C[i][j] = (C[i][j] + A[i][k] * B[k][j]) % m;  
-	            }  
-	        }  
-	    }  
-	    return C;  
-	}  
-	mat pow(mat A , LL n)  
-	{  
-	    mat B(A.size() , vec(A.size()));  
-	    for(int i = 0 ; i < A.size() ; i++)B[i][i] = 1;  
-	    while(n > 0)  
-	    {  
-	        if(n & 1)B = mul(B , A);  
-	        A = mul(A , A);  
-	        n >>= 1;  
-	    }  
-	    return B;  
-	} 
 ##RMQ
 
 ###一维
@@ -950,8 +904,98 @@
         printf("%.3f\n" , ans);
 	}
 
-###最小生成树计数
 ###生成树计数
+	//对mod取模
+	int INV[mod];
+	//求ax = 1( mod m) 的x值，就是逆元(0<a<m)
+	long long inv(long long a,long long m)
+	{
+	    if(a == 1)return 1;
+	    return inv(m%a,m)*(m-m/a)%m;
+	}
+	struct Matrix {
+	    int mat[330][330];
+	    void init()
+	    {
+	        clr(mat , 0);
+	    }
+	    int det(int n)//求行列式的值模上mod，需要使用逆元
+	    {
+	        for(int i = 0; i < n; i++)
+	            for(int j = 0; j < n; j++)
+	                mat[i][j] = (mat[i][j]%mod+mod)%mod;
+	        int res = 1;
+	        for(int i = 0; i < n; i++) {
+	            for(int j = i; j < n; j++)
+	                if(mat[j][i]!=0) {
+	                    for(int k = i; k < n; k++)
+	                        swap(mat[i][k],mat[j][k]);
+	                    if(i != j)
+	                        res = (-res+mod)%mod;
+	                    break;
+	                }
+	            if(mat[i][i] == 0) {
+	                res = -1;//不存在(也就是行列式值为0)
+	                break;
+	            }
+	            for(int j = i+1; j < n; j++) {
+	                //int mut = (mat[j][i]*INV[mat[i][i]])%mod;//打表逆元
+	                int mut = (mat[j][i]*inv(mat[i][i],mod))%mod;
+	                for(int k = i; k < n; k++)
+	                    mat[j][k] = (mat[j][k]-(mat[i][k]*mut)%mod+mod)%mod;
+	            }
+	            res = (res * mat[i][i])%mod;
+	        }
+	        return res;
+	    }
+	};
+	主函数：
+	/*
+	    对逆元打表
+	    for(int i = 1;i < MOD;i++)
+	        INV[i] = inv(i,MOD);
+	*/
+	Matrix ret;
+	ret.init();
+	for(int i = 0; i < n; i++)
+	    for(int j = 0; j < n; j++)
+	        if(i != j && g[i][j])
+	        {
+	            ret.mat[i][j] = -1;
+	            ret.mat[i][i]++;
+	        }
+	printf("%d\n",ret.det(n-1));	
+	
+
+	//不取模
+	double b[MAXN][MAXN];
+	double det(double a[][MAXN],int n)
+	{
+	    int i, j, k, sign = 0;
+	    double ret = 1;
+	    for(i = 0; i < n; i++)
+	        for(j = 0; j < n; j++)
+	            b[i][j] = a[i][j];
+	    for(i = 0; i < n; i++) {
+	        if(sgn(b[i][i]) == 0) {
+	            for(j = i + 1; j < n; j++)
+	                if(sgn(b[j][i]) != 0)
+	                    break;
+	            if(j == n)return 0;
+	            for(k = i; k < n; k++)
+	                swap(b[i][k],b[j][k]);
+	            sign++;
+	        }
+	        ret *= b[i][i];
+	        for(k = i + 1; k < n; k++)
+	            b[i][k]/=b[i][i];
+	        for(j = i+1; j < n; j++)
+	            for(k = i+1; k < n; k++)
+	                b[j][k] -= b[j][i]*b[i][k];
+	    }
+	    if(sign & 1)ret = -ret;
+	    return ret;
+	}
 ##拓扑排序
 ###1.朴素算法：
 将入度为0的点加入队列，再依次取出队列中的元素，把其出边依次遍历，并且将边指向的节点入度减一，同时将入度为0的点加入队列。
@@ -1145,6 +1189,141 @@ dp[root] = num[root] ! / (num[i] , i in tree[root])
 	}
 
 ###点双联通分量
+	POJ 2942 Knights of the Round Table
+	亚瑟王要在圆桌上召开骑士会议，为了不引发骑士之间的冲突，
+	并且能够让会议的议题有令人满意的结果，每次开会前都必须对出席会议的骑士有如下要求：
+	1、 相互憎恨的两个骑士不能坐在直接相邻的2个位置；
+	2、 出席会议的骑士数必须是奇数，这是为了让投票表决议题时都能有结果。
+	注意：1、所给出的憎恨关系一定是双向的，不存在单向憎恨关系。
+	2、由于是圆桌会议，则每个出席的骑士身边必定刚好有2个骑士。
+	即每个骑士的座位两边都必定各有一个骑士。
+	3、一个骑士无法开会，就是说至少有3个骑士才可能开会。
+	首先根据给出的互相憎恨的图中得到补图。
+	然后就相当于找出不能形成奇圈的点。
+	利用下面两个定理：
+	（1）如果一个双连通分量内的某些顶点在一个奇圈中（即双连通分量含有奇圈），
+	那么这个双连通分量的其他顶点也在某个奇圈中；
+	（2）如果一个双连通分量含有奇圈，则他必定不是一个二分图。反过来也成立，这是一个充要条件。
+	所以本题的做法，就是对补图求点双连通分量。
+	然后对于求得的点双连通分量，使用染色法判断是不是二分图，不是二分图，这个双连通分量的点是可以存在的
+	int n , m , k;
+	int head[MAXN];
+	int num;
+	int dfn[MAXN];
+	int low[MAXN];
+	int st[MAXN];
+	int g[MAXN][MAXN];
+	int top , nindex , ncnt;
+	int N;
+	struct Edge {
+	    int u , v , vis , next;
+	} e[MAXV] ;
+	
+	void init()
+	{
+	    num = 0;
+	    clr(head , -1);
+	}
+	void adde(int u , int v)
+	{
+	    e[num].u = u;
+	    e[num].v = v;
+	    e[num].vis = 0;
+	    e[num].next = head[u];
+	    head[u] = num++;
+	}
+	int mark[MAXN];
+	int color[MAXN];
+	int odd[MAXN];
+	int find(int u)
+	{
+	    for(int j = head[u] ; ~ j ; j = e[j].next){
+	        int v = e[j].v;
+	        if(mark[v]){
+	            if(color[v] == -1){
+	                color[v] = !color[u];
+	                return find(v);
+	            }
+	            else if(color[v] == color[u])return 1;
+	        }
+	    }
+	    return 0;
+	}
+	void col(int u)
+	{
+	    clr(mark , 0);
+	    int i;
+	    do{
+	        i = st[top--];
+	        mark[e[i].u] = 1;
+	        mark[e[i].v] = 1;
+	    }while(e[i].u != u);
+	    clr(color , -1);
+	    color[u] = 0;
+	    if(find(u)){
+	        for(int i = 1 ; i <= n ; i++){
+	            if(mark[i])odd[i] = 1;
+	        }
+	    }
+	}
+	void tarjan(int u)
+	{
+	    dfn[u] = low[u] = ++ nindex;
+	    for (int j = head[u]; j != -1; j = e[j].next)
+	    {
+	        int v = e[j].v;
+	        if(e[j].vis)continue;
+	        e[j].vis = e[j ^ 1].vis = 1;
+	        st[++top] = j;
+	        if(!dfn[v]){
+	            tarjan(v);
+	            low[u] = min(low[u] , low[v]);
+	            if(low[v] >= dfn[u])col(u);
+	        }
+	        else low[u] = min(low[u] , dfn[v]);
+	    }
+	}
+	
+	void solve()
+	{
+	    clr(dfn , 0);
+	    clr(low , 0);
+	    top = nindex = 0;
+	    for (int i = 1; i <= n; i ++ )
+	        if (!dfn[i])
+	        {
+	            tarjan(i);
+	        }
+	}
+	
+	
+	int main()
+	{
+	    while(~scanf("%d%d" , &n , &m) , n){
+	        init();
+	        clr(g , 0);
+	        for(int i = 0 ; i < m  ; i++) {
+	            int a , b;
+	            scanf("%d%d" , &a , &b);
+	            g[a][b] = g[b][a] = 1;
+	        }
+	        for(int i = 1 ; i <= n ; i++){
+	            for(int j = i + 1 ; j <= n ; j++){
+	                if(!g[i][j])adde(i , j) , adde(j , i);
+	            }
+	        }
+	        clr(odd , 0);
+	        N = n;
+	        solve();
+	        int ans = 0;
+	        for(int i = 1 ; i <= n ; i++){
+	            if(!odd[i])ans++;
+	        }
+	        printf("%d\n" , ans);
+	    }
+	    return 0;
+	}
+
 ###边双联通分量
 
 	void tarjan(int u, int pre)
@@ -1547,7 +1726,74 @@ A 为假或 B 为假: A-->B’ B-->A
 	    output();
 	    return 0;
 	}
-
+###最大权匹配——KM
+	int nx,ny;//两边的点数
+	int g[MAXN][MAXN];//二分图描述
+	int linker[MAXN],lx[MAXN],ly[MAXN];//y中各点匹配状态，x,y中的点标号
+	int slack[MAXN];
+	bool visx[MAXN],visy[MAXN];
+	
+	bool DFS(int x)
+	{
+	    visx[x] = true;
+	    for(int y = 0; y < ny; y++)
+	    {
+	        if(visy[y])continue;
+	        int tmp = lx[x] + ly[y] - g[x][y];
+	        if(tmp == 0)
+	        {
+	            visy[y] = true;
+	            if(linker[y] == -1 || DFS(linker[y]))
+	            {
+	                linker[y] = x;
+	                return true;
+	            }
+	        }
+	        else if(slack[y] > tmp)
+	            slack[y] = tmp;
+	    }
+	    return false;
+	}
+	int KM()
+	{
+	    memset(linker,-1,sizeof(linker));
+	    memset(ly,0,sizeof(ly));
+	    for(int i = 0;i < nx;i++)
+	    {
+	        lx[i] = -INF;
+	        for(int j = 0;j < ny;j++)
+	            if(g[i][j] > lx[i])
+	                lx[i] = g[i][j];
+	    }
+	    for(int x = 0;x < nx;x++)
+	    {
+	        for(int i = 0;i < ny;i++)
+	            slack[i] = INF;
+	        while(true)
+	        {
+	            memset(visx,false,sizeof(visx));
+	            memset(visy,false,sizeof(visy));
+	            if(DFS(x))break;
+	            int d = INF;
+	            for(int i = 0;i < ny;i++)
+	                if(!visy[i] && d > slack[i])
+	                    d = slack[i];
+	            for(int i = 0;i < nx;i++)
+	                if(visx[i])
+	                    lx[i] -= d;
+	            for(int i = 0;i < ny;i++)
+	            {
+	                if(visy[i])ly[i] += d;
+	                else slack[i] -= d;
+	            }
+	        }
+	    }
+	    int res = 0;
+	    for(int i = 0;i < ny;i++)
+	        if(linker[i] != -1)
+	            res += g[linker[i]][i];
+	    return res;
+	}
 ##欧拉回路
 	/*欧拉回路, 有向图*/
 	vec ve[Maxn];
