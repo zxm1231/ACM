@@ -855,8 +855,178 @@
 	    }
 	    return ret;
 	}
-###斯坦纳树
 ###度限制最小生成树
+就是图中的某些点在生成树时有度的限制，找满足这些约束的最小生成树。如果所有点都有度限制，那么这个问题将是NP难题），具体算法如下：
+
+1. 先求出最小 m 度限制生成树：原图中去掉和 V0 相连的所有边（可以事先存两个图， Ray 的方法是一个邻接矩阵，一个邻接表，用方便枚举边的邻接表来构造新图），得到 m 个连通分量，则这 m  个连通分量必须通过 v0 来连接，所以，在图 G  的所有生成树中 dT(v0)≥m 。也就是说，当 k<m 时，问题无解。对每个连通分量求一次最小生成树（哪个算法都行），对于每个连通分量 V’ ，用一条与 V0 直接连接的最小的边把它与 V0 点连接起来，使其整体成为一个生成树。于是，我们就得到了一个 m 度限制生成树，不难证明，这就是最小 m 度限制生成树。
+
+2. 由最小 m 度限制生成树得到最小 m+1 度限制生成树;：连接和 V0 相邻的点 v ，则可以知道一定会有一个环出现（因为原来是一个生成树），只要找到这个环上的最大权边（不能与 v0 点直接相连）并删除，就可以得到一个 m+1 度限制生成树，枚举所有和 V0 相邻点 v ，找到替换后，增加权值最小的一次替换 (当然，找不到这样的边时，就说明已经求出) ，就可以求得 m+1 度限制生成树。。如果每添加一条边，都需要对环上的边一一枚举，时间复杂度将比较高（但这个题数据比较小，所以这样也没问题，事实上，直接枚举都能过这个题），这里，用动态规划解决。设   Best(v) 为路径 v0—v 上与 v0 无关联且权值最大的边。定义 father(v) 为 v 的父结点，由此可以得到动态转移方程： Best(v)=max(Best(father(v)),ω(father(v),v)) ，边界条件为 Best[v0]=-∞ (因为我们每次寻找的是最大边，所以 -∞ 不会被考虑) ，Best[v’]=-∞| (v0,v’)∈E(T) 。
+
+3. 当 dT(v0)=k 时停止(即当 V0 的度为 k 的时候停止)，但不一定 k 的时候最优。
+
+接下来说一下算法的实现：
+
+采用并查集+ kruskal 代码量还少一点。
+
+首先， 每个连通分量的的最小生成树可以直接用一个循环，循环着 Kruskal 求出。这里利用了联通分量间的独立性，对每个连通分量分别求最小生成树，和放在一起求，毫不影响。而且kruskral算法保证了各连通分量边的有序性。
+
+找最小边的时候，上面讲的动态规划无疑是一种好方法，但是也可以这么做：
+
+先走一个循环，但我们需要逆过来加边，将与v0关联的所有边从小到达排序，然后将各连通分量连接起来，利用并查集可以保证每个连通分量只有一条边与v0相连，由于边已经从小到达排序，故与每个连通分量相连的边就是每个连通分量与v0相连中的最小边。
+
+然后求 m+1 度的最小生成树时，可以直接用 DFS ，最小生成树要一直求到 k 度，然后从中找出一个最优值。
+	int vis[MAXN];
+	int lowcost[MAXN];
+	int best[MAXN];
+	int pre[MAXN];
+	int n , k , ans , cnt;
+	int g[MAXN][MAXN];
+	int edge[MAXN][MAXN];
+	int fa[MAXN];
+	int mark[MAXN];
+	map <string ,int> m;
+	void init()
+	{
+	    clr(g , 0x3f);
+	    cnt = 1;
+	}
+	void dfs(int s)
+	{
+	    for(int i = 1 ; i <= cnt ; i++){
+	        if(mark[i] && edge[s][i]){
+	            mark[i] = 0;
+	            fa[i] = s;
+	            dfs(i);
+	        }
+	    }
+	}
+	int prim(int s)
+	{
+	    clr(mark , 0);
+	    int sum , pos;
+	    vis[s] = mark[s] = 1;
+	    sum = 0;
+	    for(int i = 1 ; i <= cnt ; i++){
+	        lowcost[i] = g[s][i];
+	        pre[i] = s;
+	    }
+	    for(int i = 1 ; i <= cnt ; i++){
+	        pos = -1;
+	        for(int j = 1 ; j <= cnt ; j++){
+	            if(!vis[j] && !mark[j]){
+	                if(pos == -1 || lowcost[pos] > lowcost[j]){
+	                    pos = j;
+	                }
+	            }
+	        }
+	        if(pos == -1)break;
+	        vis[pos] = mark[pos] = 1;
+	        edge[pre[pos]][pos] = edge[pos][pre[pos]] = 1;
+	        sum += g[pre[pos]][pos];
+	        for(int j = 1 ; j <= cnt ; j++){
+	            if(!vis[j] && !mark[j]){
+	                if(lowcost[j] > g[pos][j]){
+	                    lowcost[j] = g[pos][j];
+	                    pre[j] = pos;
+	                }
+	            }
+	        }
+	    }
+	    int minedge = inf;
+	    int root = -1;
+	    for(int i = 1 ; i <= cnt ; i++){
+	        if(mark[i] && g[i][1] < minedge){
+	            minedge = g[i][1];
+	            root = i;
+	        }
+	    }
+	    mark[root] = 0;
+	    dfs(root);
+	    fa[root] = 1;
+	    return sum + minedge;
+	}
+	int Best(int s)
+	{
+	    if(fa[s] == 1)return -1;
+	    if(best[s] != -1)return best[s];
+	    int tmp = Best(fa[s]);
+	    if(tmp != -1 && g[fa[tmp]][tmp] > g[fa[s]][s]){
+	        best[s] = tmp;
+	    }
+	    else best[s] = s;
+	    return best[s];
+	}
+	void solve()
+	{
+	    clr(vis , 0);
+	    clr(fa , -1);
+	    clr(edge , 0);
+	    vis[1] = 1;
+	    int num = 0;
+	    ans = 0;
+	    for(int i = 1 ; i <= cnt ; i++){
+	        if(!vis[i]){
+	            num++;
+	            ans += prim(i);
+	        }
+	    }
+	    int minadd , change;
+	    for(int i = num + 1 ; i <= k && i <= cnt; i ++){
+	        clr(best , -1);
+	        for(int j = 1 ; j <= cnt ; j++){
+	            if(fa[j] != 1 && best[j] == -1){
+	                Best(j);
+	            }
+	        }
+	        minadd = inf;
+	        for(int j = 1 ;  j <= cnt ; j++){
+	            if(g[1][j] != inf && fa[j] != 1){
+	                int a = best[j];
+	                int b = fa[best[j]];
+	                int tmp = g[1][j] - g[a][b];
+	                if(minadd > tmp){
+	                    minadd = tmp;
+	                    change = j;
+	                }
+	            }
+	        }
+	        if(minadd >= 0)break;
+	        ans += minadd;
+	        int a = best[change];
+	        int b = fa[best[change]];
+	        g[a][b] = g[b][a] = inf;
+	        fa[a] = 1;
+	        g[1][a] = g[a][1] = g[change][1];
+	        g[1][change] = g[change][1] = inf;
+	    }
+	}
+	int main()
+	{
+	    m.clear();
+	    m["Park"] = 1;
+	    init();
+	    scanf("%d" , &n);
+	    string str1 , str2;
+	    int v;
+	    for(int i = 0 ; i < n ; i++){
+	        cin >> str1 >> str2;
+	        scanf("%d" , &v);
+	        int a = m[str1];
+	        int b = m[str2];
+	        if(!a){
+	            m[str1] = a = ++cnt;
+	        }
+	        if(!b){
+	            m[str2] = b = ++cnt;
+	        }
+	        if(g[a][b] > v)g[a][b] = g[b][a] = v;
+	    }
+	    scanf("%d" , &k);
+	    solve();
+	    printf("Total miles driven: %d\n" , ans);
+	    return 0;
+	}
+
 ###最优比例生成树
 	double prim(double s)
 	{
@@ -1370,96 +1540,66 @@ dp[root] = num[root] ! / (num[i] , i in tree[root])
 
 ###无向图全局最小割
 
-	int n , m;
-	int combine[MAXN];
-	int g[MAXN][MAXN] , node[MAXN];
-	int st , en , minCut, k;
-	int top, sta[MAXN];
-	int maxi;
-	int vis[MAXN];
-	int wet[MAXN];
-	int Search(int n)
+	int mat[600][600];
+	int res;
+	void Mincut(int n)
 	{
-	    clr(vis,0);
-	    clr(wet,0);
-	    int minCut = 0;
-	    int temp = -1;
-	    st = -1, en = -1;
-	    int top = 0;
-	    for(int i=0; i< n; i++)
-	    {
-	        int maxi = -INF;
-	        for(int j = 0; j < n; j++)
-	        {
-	            int u = node[j];
-	            if(!combine[u] && !vis[u] && wet[u] > maxi)
-	            {
-	                temp = u;
-	                maxi = wet[u];
-	            }
-	        }
-	        sta[top++] = temp;
-	        vis[temp] = true;
-	        if(i == n - 1)
-	            minCut = maxi;
-	        for(int j = 0; j < n; j++)
-	        {
-	            int u = node[j];
-	            if(!combine[u] && !vis[u])
-	            {
-	                wet[u] += g[temp][u];
-	            }
-	        }
-	    }
-	    st = sta[top - 2];
-	    en = sta[top - 1];
-	    for(int i = 0; i < top; i++)  node[i] = sta[i];
-	    return minCut;
-	}
-	
-	int SW(int n)
-	{
-	    int ans = inf;
-	    clr(combine,0);
-	    for(int i = 0; i < n; i++)
+	    int node[600], dist[600];
+	    bool visit[600];
+	    int i, prev, j, k;
+	    for (i = 0; i < n; i++)
 	        node[i] = i;
-	    for(int i = 1; i < n; i++)
-	    {
-	        k = n - i + 1;
-	        int cur = Search(k);
-	        if(cur < ans)
-	        {
-	            ans = cur;
+	    while (n > 1) {
+	        int maxj = 1;
+	        for (i = 1; i <n; i++) { //初始化到已圈集合的割大小
+	            dist[node[i]] = mat[node[0]][node[i]];
+	            if (dist[node[i]] > dist[node[maxj]])
+	                maxj = i;
 	        }
-	        if(ans == 0) return ans;
-	        combine[en] = true;
-	        for(int j = 0; j < n; j++)
-	        {
-	            if(j == st) continue;
-	            if(!combine[j])
-	            {
-	                g[st][j] += g[en][j];
-	                g[j][st] += g[j][en];
+	        prev = 0;
+	        memset(visit, false, sizeof (visit));
+	        visit[node[0]] = true;
+	        for (i = 1; i < n; i++) {
+	            if (i == n - 1) { //只剩最后一个没加入集合的点，更新最小割
+	                res = min(res, dist[node[maxj]]);
+	                for (k = 0; k < n; k++) { //合并最后一个点以及推出它的集合中的点
+	                    mat[node[k]][node[prev]]=(mat[node[prev]][node[k]]+=mat[node[k]][node[maxj]]);
+	                }
+	                node[maxj] = node[--n]; //缩点后的图
+	            }
+	            visit[node[maxj]] = true;
+	            prev = maxj;
+	            maxj = -1;
+	            for (j = 1; j < n; j++) {
+	                if (!visit[node[j]]) { //将上次求的maxj加入集合，合并与它相邻的边到割集
+	                    dist[node[j]] += mat[node[prev]][node[j]];
+	                    if (maxj == -1 || dist[node[maxj]] < dist[node[j]])
+	                        maxj = j;
+	                }
 	            }
 	        }
+	
 	    }
-	    return ans;
+	    return;
 	}
 	
 	int main()
 	{
-	    while(~scanf("%d%d" , &n , &m)){
-	        clr(g , 0);
-	        for(int i = 0 ; i < m ; i++){
-	            int u , v , c;
-	            scanf("%d%d%d" , &u , &v , &c);
-	            g[u][v] += c;
-	            g[v][u] += c;
+	    int n, m, a, b, v;
+	    while (scanf("%d%d", &n, &m) != EOF) {
+	        res = (1 << 29);
+	        memset(mat, 0, sizeof (mat));
+	        while (m--) {
+	            scanf("%d%d%d", &a, &b, &v);
+	            mat[a][b] += v;
+	            mat[b][a] += v;
 	        }
-	        printf("%d\n" , SW(n));
+	        Mincut(n);
+	        printf("%d\n", res);
 	    }
 	    return 0;
 	}
+
 
 ##2-SAT
 综述：每个条件的形式都是x[i]为真/假或者x[j]为真/假，
@@ -1502,26 +1642,211 @@ A 为假或 B 为假: A-->B’ B-->A
 			if (i==(j^1)) continue;//记得j^1加上小括号
 			sat.add_clause(i,j);//枚举出的不属于同一组的不相容的两点
 		}
-###【O(NM)算法：求字典序最小的解】
-根据2-SAT建成的图中边的定义可以发现，若图中i到j有路径，则若i选，则j也要选；或者说，若j不选，则i也不能选；
-因此得到一个很直观的算法：
-（1）给每个点设置一个状态V，V=0表示未确定，V=1表示确定选取，V=2表示确定不选取。称一个点是已确定的当且仅当其V值非0。设立两个队列Q1和Q2，分别存放本次尝试选取的点的编号和尝试不选的点的编号。
-（2）若图中所有的点均已确定，则找到一组解，结束，否则，将Q1、Q2清空，并任选一个未确定的点i，将i加入队列Q1，将i'加入队列Q2；
-（3）找到i的所有后继。对于后继j，若j未确定，则将j加入队列Q1；若j'（这里的j'是指与j在同一对的另一个点）未确定，则将j'加入队列Q2；
-（4）遍历Q2中的每个点，找到该点的所有前趋（这里需要先建一个补图），若该前趋未确定，则将其加入队列Q2；
-（5）在（3）（4）步操作中，出现以下情况之一，则本次尝试失败，否则本次尝试成功：
-<1>某个已被加入队列Q1的点被加入队列Q2；
-<2>某个已被加入队列Q2的点被加入队列Q1;
-<3>某个j的状态为2；
-<4>某个i'或j'的状态为1或某个i'或j'的前趋的状态为1；
-（6）若本次尝试成功，则将Q1中的所有点的状态改为1，将Q2中所有点的状态改为2，转（2），否则尝试点i'，若仍失败则问题无解。
-该算法的时间复杂度为O(NM)（最坏情况下要尝试所有的点，每次尝试要遍历所有的边），但是在多数情况下，远远达不到这个上界。
-具体实现时，可以用一个数组vst来表示队列Q1和Q2。设立两个标志变量i1和i2（要求对于不同的i，i1和i2均不同，这样可以避免每次尝试都要初始化一次，节省时间），若vst[i]=i1则表示i已被加入Q1，若vst[i]=i2则表示i已被加入Q2。不过Q1和Q2仍然是要设立的，因为遍历（BFS）的时候需要队列，为了防止重复遍历，加入Q1（或Q2）中的点的vst值必然不等于i1（或i2）。中间一旦发生矛盾，立即中止尝试，宣告失败。
+###求字典序最小解
+	struct Edge {
+	    int v,next;
+	} e[MAXE];
+	int head[MAXN],tot;
+	void init()
+	{
+	    tot = 0;
+	    memset(head,-1,sizeof(head));
+	}
+	void addedge(int u,int v)
+	{
+	    e[tot].v = v;
+	    e[tot].next = head[u];
+	    head[u] = tot++;
+	}
+	bool vis[MAXN];//染色标记，为true表示选择
+	int S[MAXN],top;//栈
+	bool dfs(int u)
+	{
+	    if(vis[u^1])return false;
+	    if(vis[u])return true;
+	    vis[u] = true;
+	    S[top++] = u;
+	    for(int i = head[u]; i != -1; i = e[i].next)
+	        if(!dfs(e[i].v))
+	            return false;
+	    return true;
+	}
+	bool Twosat(int n)
+	{
+	    memset(vis,false,sizeof(vis));
+	    for(int i = 0; i < n; i += 2) {
+	        if(vis[i] || vis[i^1])continue;
+	        top = 0;
+	        if(!dfs(i)) {
+	            while(top)vis[S[--top]] = false;
+	            if(!dfs(i^1)) return false;
+	        }
+	    }
+	    return true;
+	}
+	int main()
+	{
+	    int n,m;
+	    int u,v;
+	    while(scanf("%d%d",&n,&m) == 2) {
+	        init();
+	        while(m--) {
+	            scanf("%d%d",&u,&v);
+	            u--;
+	            v--;
+	            addedge(u,v^1);
+	            addedge(v,u^1);
+	        }
+	        if(Twosat(2*n)) {
+	            for(int i = 0; i < 2*n; i++)
+	                if(vis[i])
+	                    printf("%d\n",i+1);
+	        } else printf("NIE\n");
+	    }
+	    return 0;
+	}
 
-该算法虽然在多数情况下时间复杂度到不了O(NM)，但是综合性能仍然不如下面的O(M)算法。不过，该算法有一个很重要的用处：求字典序最小的解！
-如果原图中的同一对点编号都是连续的（01、23、45……）则可以依次尝试第0对、第1对……点，每对点中先尝试编号小的，若失败再尝试编号大的。这样一定能求出字典序最小的解（如果有解的话），因为一个点一旦被确定，则不可更改。
-如果原图中的同一对点编号不连续（比如03、25、14……）则按照该对点中编号小的点的编号递增顺序将每对点排序，然后依次扫描排序后的每对点，先尝试其编号小的点，若成功则将这个点选上，否则尝试编号大的点，若成功则选上，否则（都失败）无解。
-
+###输出任意解
+	struct Edge {
+	    int v,next;
+	} e[MAXE];
+	int head[MAXN],num;
+	void init()
+	{
+	    num = 0;
+	    memset(head,-1,sizeof(head));
+	}
+	void addedge(int u,int v)
+	{
+	    e[num].v = v;
+	    e[num].next = head[u];
+	    head[u] = num++;
+	}
+	int Low[MAXN],DFN[MAXN],Stack[MAXN],Belong[MAXN];//Belong数组的值1~scc
+	int Index,top;
+	int scc;
+	bool Instack[MAXN];
+	void Tarjan(int u)
+	{
+	    int v;
+	    Low[u] = DFN[u] = ++Index;
+	    Stack[top++] = u;
+	    Instack[u] = true;
+	    for(int i = head[u]; i != -1; i = e[i].next) {
+	        v = e[i].v;
+	        if( !DFN[v] ) {
+	            Tarjan(v);
+	            if(Low[u] > Low[v])Low[u] = Low[v];
+	        } else if(Instack[v] && Low[u] > DFN[v])
+	            Low[u] = DFN[v];
+	    }
+	    if(Low[u] == DFN[u]) {
+	        scc++;
+	        do {
+	            v = Stack[--top];
+	            Instack[v] = false;
+	            Belong[v] = scc;
+	        } while(v != u);
+	    }
+	}
+	bool solvable(int n)//n是总个数,需要选择一半
+	{
+	    memset(DFN,0,sizeof(DFN));
+	    memset(Instack,false,sizeof(Instack));
+	    Index = scc = top = 0;
+	    for(int i = 0; i < n; i++)
+	        if(!DFN[i])
+	            Tarjan(i);
+	    for(int i = 0; i < n; i += 2) {
+	        if(Belong[i] == Belong[i^1])
+	            return false;
+	    }
+	    return true;
+	}
+	//*************************************************
+	//拓扑排序求任意一组解部分
+	queue<int>q1,q2;
+	vector<vector<int> > dag;//缩点后的逆向DAG图
+	char color[MAXN];//染色，为'R'是选择的
+	int indeg[MAXN];//入度
+	int cf[MAXN];
+	void solve(int n)
+	{
+	    dag.assign(scc+1,vector<int>());
+	    memset(indeg,0,sizeof(indeg));
+	    memset(color,0,sizeof(color));
+	    for(int u = 0; u < n; u++)
+	        for(int i = head[u]; i != -1; i = e[i].next) {
+	            int v = e[i].v;
+	            if(Belong[u] != Belong[v]) {
+	                dag[Belong[v]].push_back(Belong[u]);
+	                indeg[Belong[u]]++;
+	            }
+	        }
+	    for(int i = 0; i < n; i += 2) {
+	        cf[Belong[i]] = Belong[i^1];
+	        cf[Belong[i^1]] = Belong[i];
+	    }
+	    while(!q1.empty())q1.pop();
+	    while(!q2.empty())q2.pop();
+	    for(int i = 1; i <= scc; i++)
+	        if(indeg[i] == 0)
+	            q1.push(i);
+	    while(!q1.empty()) {
+	        int u = q1.front();
+	        q1.pop();
+	        if(color[u] == 0) {
+	            color[u] = 'R';
+	            color[cf[u]] = 'B';
+	        }
+	        int siz = dag[u].size();
+	        for(int i = 0; i < siz; i++) {
+	            indeg[dag[u][i]]--;
+	            if(indeg[dag[u][i]] == 0)
+	                q1.push(dag[u][i]);
+	        }
+	    }
+	}
+	int change(char s[])
+	{
+	    int ret = 0;
+	    int i = 0;
+	    while(s[i]>='0' && s[i]<='9') {
+	        ret *= 10;
+	        ret += s[i]-'0';
+	        i++;
+	    }
+	    if(s[i] == 'w')return 2*ret;
+	    else return 2*ret+1;
+	}
+	int main()
+	{
+	    int n,m;
+	    char s1[10],s2[10];
+	    while(scanf("%d%d",&n,&m) == 2) {
+	        if(n == 0 && m == 0)break;
+	        init();
+	        while(m--) {
+	            scanf("%s%s",s1,s2);
+	            int u = change(s1);
+	            int v = change(s2);
+	            addedge(u^1,v);
+	            addedge(v^1,u);
+	        }
+	        addedge(1,0);
+	        if(solvable(2*n)) {
+	            solve(2*n);
+	            for(int i = 1; i < n; i++) {
+	//注意这一定是判断color[Belong[
+	                if(color[Belong[2*i]] == 'R')printf("%dw",i);
+	                else printf("%dh",i);
+	                if(i < n-1)printf(" ");
+	                else printf("\n");
+	            }
+	        } else printf("bad luck\n");
+	    }
+	    return 0;
+	}
 ##匹配
 ###最大匹配 匈牙利
 	int V;
@@ -2171,3 +2496,99 @@ g[u,v]表示F[u,v]-B[u,v] 显然 0<=g[u,v]<=C[u,v]-B[u,v]
 然后，因为第一遍做的时候并无这条边，所以S->T的流量在第一遍做的时候都已经尽力往其他边流了. 于是加上T->S这条边后，都是些剩余的流不到其他边的流量. 从而达到尽可能减少T->S这边上的流量的效果，即减小了最终答案.
 感觉上第一遍做的既然是不改成无源汇直接求的，应该是错误的？
 这里不是错误的. 首先我们的解都是按照第二遍所求的而定，其次这里这样做本质是延迟对T->S这条边的增流.
+#博弈
+1 翻硬币游戏
+
+所翻动的硬币中，最右边那个硬币的必须是从正面翻到反面,谁不能翻谁输
+局面的SG 值为局面中每个正面朝上的棋子单一存在时的SG 值的异或和
+每次能翻转一个或两个硬币。(不用连续)
+
+每个硬币的SG值为它的编号，初始编号为0
+每次必须连续翻转k个硬币
+
+sg的形式为000…01 000…01，其中一小段0的个数为k-1
+每次必须翻动两个硬币，而且这两个硬币的距离要在可行集S={1,2,3}中，硬币序号从0开始。(Twins游戏)
+
+位置x,sg[x]=x%3;
+每次可以翻动一个、二个或三个硬币。（Mock Turtles游戏）
+
+一个非负整数为odious，当且仅当该数的二进制形式的1出现的次数是奇数，否则称作evil
+当2x为odious时，sg值是2x，当2x是evil时，sg值是2x+1
+2 anti-nim游戏
+
+拿最后一个棋子的人输
+先手必胜有两种状态：
+1.如果每一个小游戏都只剩下一个石子了，SG为0。
+2.至少一堆石子>1,且SG不为0.
+3 every-SG游戏
+
+多线程博弈。形象的说就是红队和蓝队每个队n个人，然后进行n个博弈，最后结束的一场博弈的胜者胜利。
+如果v是先手必胜，则f[v]=max(f[u])+1,其中u为v的后继且u为先手必败。
+否则f[v]=min(f[u])+1,u为v后继。
+4 删边游戏
+
+移除一个有根图的某些边，直到没有与地板的相连的边
+Colon Principle：当树枝在一个顶点上时，用一个非树枝的杆的长度来替代，相当于他们的n异或之和。
+The Fusion Principle：任何环内的节点可以融合成一点而不会改变图的sg值。
+拥有奇数条边的环可简化为一条边，偶数条边的环可简化为一个节点
+5 Ferguson博弈
+
+第一个盒子中有n枚石子，第二个盒子中有m个石子(n, m > 0),清空一个盒子中的石子，然后从另一个盒子中拿若干石子到被清空的盒子中，使得最后两个盒子都不空。当两个盒子中都只有一枚石子时，游戏结束。最后成功执行操作的玩家获胜
+(x,y)至少一偶时，先手胜；都为奇时，先手败
+6 staircase nim
+
+许多硬币任意分布在楼梯上，共n阶楼梯从地面由下向上编号为0到n。游戏者在每次操作时可以将楼梯j(1<=j<=n)上的任意多但至少一个硬币移动到楼梯j-1上。游戏者轮流操作，将最后一枚硬币移至地上的人获胜。
+SG=奇数台阶的硬币数nim和
+7 N阶Nim游戏
+
+有k堆石子，各包含x1,x2…xk颗石子。双方玩家轮流操作，每次操作选择其中非空的若干堆，至少一堆但不超过N堆，在这若干堆中的每堆各取走其中的若干颗石子（1颗，2颗…甚至整堆），数目可以不同，取走最后一颗石子的玩家获胜。 
+当且仅当在每一个不同的二进制位上，x1,x2…xk中在该位上1的个数是N+1的倍数时，后手方有必胜策略，否则先手必胜。
+8 Nim 积
+
+验题: hdu 3404
+	int m[2][2]={0,0,0,1};
+	int Nim_Mult_Power(int x,int y){
+		if(x<2)
+			return m[x][y];
+		int a=0;
+		for(;;a++)
+			if(x>=(1<<(1<<a))&&x<(1<<(1<<(a+1))))
+				break;
+		int m=1<<(1<<a);
+		int p=x/m,s=y/m,t=y%m;
+		int d1=Nim_Mult_Power(p,s);
+		int d2=Nim_Mult_Power(p,t);
+		return (m*(d1^d2))^Nim_Mult_Power(m/2,d1);
+	}
+	int Nim_Mult(int x,int y){
+		if(x<y)
+			return Nim_Mult(y,x);
+		if(x<2)
+			return m[x][y];
+		int a=0;
+		for(;;a++)
+			if(x>=(1<<(1<<a))&&x<(1<<(1<<(a+1))))
+				break;
+		int m=1<<(1<<a);
+		int p=x/m,q=x%m,s=y/m,t=y%m;
+		int c1=Nim_Mult(p,s),c2=Nim_Mult(p,t)^Nim_Mult(q,s),c3=Nim_Mult(q,t);
+		return (m*(c1^c2))^c3^Nim_Mult_Power(m/2,c1);
+	}
+	int main()
+	{
+	    int t;
+	    cin >> t;
+	    while(t--){
+	        int n;
+	        scanf("%d" , &n);
+	        int res = 0;
+	        while(n--){
+	            int x , y;
+	            scanf("%d%d" , &x , &y);
+	            res ^=Nim_Mult(x , y);
+	        }
+	        if(!res)puts("Don't waste your time.");
+	        else puts("Have a try, lxhgww.");
+	    }
+	    return 0;
+	}
