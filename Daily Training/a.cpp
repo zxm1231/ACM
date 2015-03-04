@@ -1,242 +1,221 @@
-#include<math.h>
-#include<stdio.h>
-#include<stdlib.h>
-#include<conio.h>
-#define  MAX  50
+/*
+     ID: xinming2
+     PROG: castle
+     LANG: C++
+*/
 
-typedef   struct   wuli{
-           float   d[MAX];
-           char   name[50];
-           int       LEN;
-           float   ccha[MAX];       /*残差数组*/
-           float   avg;                 /*data的平均值*/
-           double   sx;                 /*标准偏差Sx*/
+#include <algorithm>
+#include <bitset>
+#include <cctype>
+#include <cerrno>
+#include <clocale>
+#include <cmath>
+#include <complex>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
+#include <deque>
+#include <exception>
+#include <fstream>
+#include <functional>
+#include <limits>
+#include <list>
+#include <map>
+#include <iomanip>
+#include <ios>
+#include <iosfwd>
+#include <iostream>
+#include <istream>
+#include <ostream>
+#include <queue>
+#include <set>
+#include <sstream>
+#include <stack>
+#include <stdexcept>
+#include <streambuf>
+#include <string>
+#include <utility>
+#include <vector>
+#include <cwchar>
+#include <cwctype>
 
-}wulidata;
-  wulidata   *InputData();
-  void   average(wulidata   *wl);
-   void   YCZhi(wulidata   *wl);
-  void   CanCha(wulidata   *wl);
-  void   BZPianCha(wulidata   *wl);
+using namespace std;
+#define outstars cout << "***********************" << endl;
+#define clr(a,b) memset(a,b,sizeof(a))
+#define mk make_pair
+#define pb push_back
+#define sz size()
+#define AA first
+#define BB second
+#define eps 1e-10
+#define zero(x) fabs(x) < eps
+#define deq(a , b) fabs(a - b) < eps
+#define lson l , mid , rt << 1
+#define rson mid + 1 , r , rt << 1 | 1
 
-  void   output(wulidata   *wl);
-  void range(wulidata   *wl);
+const int MAXN = 60 + 5;
+const int MAXE = 50000 + 50;
+const int MAXQ = 1000000 + 50;
 
+const int inf = 0x3f3f3f3f;
+const int INF = ~0U >> 1;
+const long long LLinf = 0x3FFFFFFFFFFFFFFFLL;
+const long long LLINF = (1LL << 63) - 1;
+const int IMIN = 0x80000000;
 
-  /*----------------------------------------------------------*/
-  void   line()
-  {
-                  int   i;
-                  printf("\n");
-                  for(i=0;i<74;i++)
-					printf("=");
-                  printf("\n");
-  }
-  /*-------------------------------------------------------*/
-  wulidata   *InputData()
-  {
+const int mod = 10007;
+const long long MOD = 1000000000 + 7;
+const double PI = acos(-1.0);
 
-                  int i=0,k;
-                  float da;
-                  char Z=0;
-                  wulidata   *wl;
-                  wl=(wulidata   *)malloc(sizeof(wulidata));
-                  printf("请为你要处理的数据组命名：");
-                  scanf("%s",wl->name);
-                  printf("\n下面请你输入数据%s具体数值，数据不能超过50个\n",wl->name);
-                  printf("当name='#'时输入结束\n");
-                  do{
-                        printf("%s%d=",wl->name,i+1);
-                        scanf("%f",&da);
-                        wl->d[i]=da;
-						i++;
-						if(getchar()=='#') break;
-                  }while(wl->d[i-1]!=0.0&&i<MAX);
-                  wl->LEN=i-1;
-                  do{
-                            printf("你输入的数据如下：\n");
-                            for(i=0;i<wl->LEN;i++)
-                                            printf("%s%d=%f\t",wl->name,i+1,wl->d[i]);
-                                    printf("\n你是否要作出修改(Y/N)?");
-                            while(   getchar()!='\n');
-                                    Z=getchar();
+typedef long long LL;
+typedef pair<int , int> pii;
+typedef vector<int> vec;
 
-                            if(   Z=='y'||Z=='Y'){
-                                              printf("你须要修改哪一个元素，请输入其标号i=(1~%d)\n",wl->LEN);
-                                                      while(   getchar()!='\n');
-                              scanf("%d",&k);
-                                              printf("\n%s%d=",wl->name,k);
-                                              scanf("%f",&(wl->d[k-1]));
-                      }
-                            else   if(Z=='n'||Z=='N')
-                                              printf("OK!下面开始计算。\n");
+int n , m , cnt;
+int U[MAXN][MAXN] , D[MAXN][MAXN] , L[MAXN][MAXN] , R[MAXN][MAXN];
+int col[MAXN][MAXN] , SZ[MAXN * MAXN];
+void init()
+{
+    clr(U , 0);clr(D , 0); clr(L , 0);clr(R , 0);
+    clr(col , 0); clr(SZ , 0);
+}
+void flood_fill()
+{
+    cnt = 0;
+    for(int i = 1 ; i <= n ; i++){
+        for(int j = 1; j <= m ; j++){
+            if(!col[i][j]){
+//                cout << "START FROM : " << i << ' ' << j << ' ' << col[i][j] << endl;
+                queue <pii> que;
+                que.push(mk(i , j));
+                col[i][j] = ++cnt;
+                SZ[cnt] = 1;
+                while(!que.empty()){
+//                    outstars
+                    pii tmp = que.front();
+                    que.pop();
+                    int ii = tmp.AA , jj = tmp.BB ;
+//                    cout << ii << ' '  << jj << ' ' << cnt << ' ' << endl;
+//                    cout << U[ii][jj] << ' ' << D[ii][jj] << ' ' << L[ii][jj] << ' ' << R[ii][jj] << endl;
+                    if(!col[ii][jj]){
+                        col[ii][jj] = cnt;
+                        SZ[cnt]++;
+                    }
+                    if(U[ii][jj] && ii != 1 && !col[ii - 1][jj])que.push(mk(ii - 1 , jj));
+                    if(D[ii][jj] && ii != n && !col[ii + 1][jj])que.push(mk(ii + 1 , jj));
+                    if(L[ii][jj] && jj != 1 && !col[ii][jj - 1])que.push(mk(ii , jj - 1));
+                    if(R[ii][jj] && jj != m && !col[ii][jj + 1])que.push(mk(ii , jj + 1));
+                }
+            }
+        }
+    }
+//    for(int i = 1 ; i <= n ; i++){
+//        for(int j = 1 ; j <= m ; j++){
+//            cout << col[i][j] << ' ' ;
+//        }cout << endl;
+//    }
+//    for(int i = 1 ; i <= cnt ; i++){
+//        cout << i << ' ' << SZ[i] << endl;
+//    }
+}
+int main()
+{
+//    freopen("castle.in" , "r" , stdin);
+//    freopen("castle.out" , "w" , stdout);
+    while(~scanf("%d%d" , &m , &n)){
+        init();
+        for(int i = 1 ; i <= n ; i++){
+            for(int j = 1 ; j <= m ; j++){
+                int num;
+                scanf("%d" , &num);
+                bitset <4> b(num);
+                U[i][j] = !b[1];
+                D[i][j] = !b[3];
+                L[i][j] = !b[0];
+                R[i][j] = !b[2];
+            }
+        }
+        flood_fill();
 
-                  }while(Z!='N'&&Z!='n');
-                  return(wl);
-  }
-  /*--------------------------------------------------------------------*/
-  void   average(wulidata   *wl)
-  {
-                  float   ad,sum=0;
-                  int   i;
-                  for(i=0;i<wl->LEN;i++)
-                  {
-                                  sum=sum+(wl->d[i]);
-                  }
-                  ad=sum/(wl->LEN);
-                  wl->avg=ad;
-  }
-  /*-------------------------------------------------------------------*/
-  void   CanCha(wulidata   *wl)
-  {
-                  int   i;
-                  for(i=0;i<wl->LEN;i++)
-                    wl->ccha[i]=(wl->d[i])-(wl->avg);
-  }
-    /*---------------------------------------------------------------*/
-  void   YCZhi(wulidata   *wl)/*检查并剔除异常值*/
-  {
-                  int   i,j;
-				  float g,YCZhi;
-				  double temp,CCha;
+        int maxnum = 0;
+        for(int i = 1 ; i <= cnt ; i++){
+            maxnum = max(SZ[i] , maxnum);
+        }
+        printf("%d\n%d\n" , cnt , maxnum);
+        vector<pair<int , pair <int , pair<int  , char > > > > vp;
+        for(int i = 1 ; i <= n ; i++){
+            for(int j = 1 ; j <= m ; j++){
+                if(col[i][j] && col[i - 1][j] && col[i][j] != col[i - 1][j] && !U[i][j]){
+//                    cout << i << ' ' << j << "    down   " << endl;
+                    vp.pb(mk(n * m - SZ[col[i][j]] - SZ[col[i - 1][j]] , mk(j , mk(n - i , 'N'))));
+                }
+                if(col[i][j] && col[i + 1][j] && col[i][j] != col[i + 1][j] && !D[i][j]){
+//                    cout << i << ' ' << j << "    down   " << endl;
+                    vp.pb(mk(n * m - SZ[col[i][j]] - SZ[col[i + 1][j]] , mk(j , mk(n - i , 'S'))));
+                }
+                if(col[i][j] && col[i][j + 1] && col[i][j] != col[i][j + 1] && !R[i][j]){
+//                    cout << i << ' ' << j << "   right   " << endl;
+                    vp.pb(mk(n * m - SZ[col[i][j]] - SZ[col[i][j + 1]] , mk(j , mk(n - i , 'E'))));
+                }
+                if(col[i][j] && col[i][j - 1] && col[i][j] != col[i][j - 1] && !R[i][j]){
+//                    cout << i << ' ' << j << "   right   " << endl;
+                    vp.pb(mk(n * m - SZ[col[i][j]] - SZ[col[i][j - 1]] , mk(j , mk(n - i , 'W'))));
+                }
+            }
+        }
+        sort(vp.begin() , vp.end());
+//        for(int i = 0 ; i < vp.sz ; i++){
+//            cout << i << ' ' << n * m - vp[i].AA  << ' ' << n - vp[i].BB.BB.AA << ' ' << vp[i].BB.AA << ' ' << vp[i].BB.BB.BB<< endl;
+//        }
+//        reverse(vp.begin() , vp.end());
+        printf("%d\n%d %d %c\n" , n * m - vp[0].AA , n - vp[0].BB.BB.AA , vp[0].BB.AA , vp[0].BB.BB.BB);
+    }
+    return 0;
+}
+/*
+32 32
+3 2 2 2 2 2 2 2 2 2 2 2 2 2 2 6 3 2 2 2 2 2 2 2 2 2 2 2 2 2 2 6
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4
+9 8 8 8 8 8 8 8 8 8 8 8 8 8 8 12 9 8 8 8 8 8 8 8 8 8 8 8 8 8 8 12
 
-                  printf("下面开始检查并提出异常值！\n");
-				  do{
-						printf("当前共有%d个数，数据如下：\n",wl->LEN);
-						for(i=0;i<wl->LEN;i++)
-							printf("%s%d=%f\t",wl->name,i+1,wl->d[i]);
-						j=-1;
-						CCha=0.0;
-						printf("\n请输入g的值\ng=");
-						scanf("%f",&g);
-						for(i=0;i<wl->LEN;i++)
-						{
-							temp=fabs((wl->d[i])-(wl->avg));
-							if((temp>g*(wl->sx))&&(temp>CCha))
-							{
-								YCZhi=wl->d[i];
-								CCha=temp;
-								j=i;
-							}
-						}
-						if(j>=0){
-							printf("找到异常值为%s%d=%f，将它剔除。\n",wl->name,(j+1),wl->d[j]);
-							for(i=j;i<wl->LEN-1;i++)
-								wl->d[i]=wl->d[i+1];
-							wl->LEN--;
-						}
-						else
-							printf("本次未找到异常数据，数据中异常数据已剔除完毕！\n");
-				  }while(j>=0);
-				  printf("当前共有%d个数，数据如下：\n",wl->LEN);
-				  for(i=0;i<wl->LEN;i++)
-					printf("%s%d=%f\t",wl->name,i+1,wl->d[i]);
-  }
-  /*---------------------------------------------------------------*/
-  void   BZPianCha(wulidata   *wl)/*标准偏差*/
-  {
-                  double   sum;
-                  int   i;
-                  sum=0.0;
-                  for(i=0;i<wl->LEN;i++)
-                      sum=sum+pow(wl->d[i],2);
-				  sum=sum-wl->LEN*pow(wl->avg,2);
-                  wl->sx=sqrt(sum/(wl->LEN-1));
-  }
-  /*--------------------------------------------------------------*/
-  void leijinxwc(wulidata   *wl)/*判断累进性误差*/
-	 {
-	  double M,sum1,sum2,temp;
-  int i;
-  sum1=sum2=0.0;
-  temp=wl->ccha[0];
- for (i=1;i<=wl->LEN;i++)
-	 if (temp<wl->ccha[i])
-		 temp=wl->ccha[i];
-  if(wl->LEN%2==0)            /*数据为偶数个时*/
-	 {for(i=0;i<(wl->LEN/2);i++)
-	  {sum1=sum1+ wl->ccha[i];}
-	  for (i=(wl->LEN/2);i<wl->LEN;i++)
-	  {sum2=sum2+wl->ccha[i];}
-  M=fabs(sum1-sum2);
+8 8
+3 2 2 6 3 2 2 6
+1 0 0 4 1 0 0 4
+1 0 0 4 1 0 0 4
+1 0 0 4 1 0 0 4
+1 0 0 4 1 0 0 4
+1 0 0 4 1 0 0 4
+1 0 0 4 1 0 0 4
+9 8 8 12 9 8 8 12
 
-     if(M>temp)
-	  printf("存在累进性误差\n");
-  else printf("不存在累进性误差\n");}
- else                      /*数据为奇数个时*/
- { for(i=0;i<(((wl->LEN)-1)/2);i++)
-	  {sum1=sum1+ wl->ccha[i];}
-	  for (i=((wl->LEN)+1)/2;i<wl->LEN;i++)
-	  {sum2=sum2+wl->ccha[i];}
-  M=fabs(sum1-sum2);
-   if(M>temp)
-	  printf("存在累进性误差\n");
-  else printf("不存在累进性误差\n");}
-  }
-  /*---------------------------------------------------------------*/
-  void zhouqixwc(wulidata   *wl)/*判断周期性误差*/
-  {	double sum=0;
-  int i;
-  for(i=0;i<wl->LEN-1;i++)
-	  sum=sum+(wl->ccha[i])*(wl->ccha[i+1]);
-  if(fabs(sum)>(sqrt(wl->LEN-1))*pow(wl->sx,2))
-	  printf("存在周期性误差\n");
-  else printf("不存在周期性误差\n");
-  }
-
-  /*--------------------------------------------------------------------*/
-   void range(wulidata   *wl)/*给出95%置信区间*/
-   {
-	   double u1,u2,x,ta;
-	   printf("\n请输入ta的值\nta=");
-		scanf("%f",&ta);
-		ta=2.262;
-		x=(ta)*(wl->sx/sqrt(wl->LEN));
-		u1=wl->avg-x;
-		u2=wl->avg+x;
-		printf("平均值为%.5f\n平均值的标准偏差为%.5f\n",wl->avg,wl->sx/sqrt(wl->LEN));
-		printf("计算得到所求数值的范围应取%.5f~%.5f。\n",u1,u2);
-		 }
-
-
-  void   output(wulidata   *wl)
-  {
-                  int   i;
-                  printf("\n");
-                  line();
-                  printf("你输入的数据如下：\n");
-                  for(i=0;i<wl->LEN;i++)
-                  {printf("%s%d=%f\t",wl->name,i+1,wl->d[i]);}
-          printf("\n");
-                  printf("\n\t数据%s的平均值(A)%s=%f",wl->name,wl->name,wl->avg);
-                  line();
-                  printf("数据的残差如下:\n");
-                  for(i=0;i<wl->LEN;i++)
-                  {printf("△%s%d=%s%d-(A)%s=%f\t\t",wl->name,i+1,wl->name,i+1,wl->name,wl->ccha[i]);}
-          line();
-          printf("求得标准偏差Sx\n");
-                  printf("Sx=%f",wl->sx);
-                  printf("\n");
-
-
-  }
-  /*================================================================*/
- int main()
-  {
-            wulidata   *Hua=NULL;
-
-            Hua=InputData();
-
-            average(Hua);
-            BZPianCha(Hua);/*标准偏差*/
-			YCZhi(Hua);
-              average(Hua);
-			BZPianCha(Hua);
-			CanCha(Hua);
-            leijinxwc(Hua);
-            zhouqixwc(Hua);
-            output(Hua);
-			 range(Hua);
-            getch();
-			return 0;
-  }
+*/
